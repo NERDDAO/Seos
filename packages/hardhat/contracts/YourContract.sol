@@ -1,78 +1,150 @@
-//SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.0;
 
-// Useful for debugging. Remove when deploying to a live network.
-import "hardhat/console.sol";
-// Use openzeppelin to inherit battle-tested implementations (ERC20, ERC721, etc)
-// import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-/**
- * A smart contract that allows changing a state variable of the contract and tracking the changes
- * It also allows the owner to withdraw the Ether in the contract
- * @author BuidlGuidl
- */
-contract YourContract {
+interface ICallable {
+    function tokenCallback(address _from, uint256 _tokens, bytes calldata _data) external returns (bool);
+}
 
-    // State Variables
-    address public immutable owner;
-    string public greeting = "Building Unstoppable Apps!!!";
-    bool public premium = false;
-    uint256 public totalCounter = 0;
-    mapping(address => uint) public userGreetingCounter;
+contract Acid is ERC20, Ownable {
+    uint256 private constant FLOAT_SCALAR = 2**64;
+    uint256 private _stakeFee = 2; // 2% per transaction
+    uint256 private _minStakeAmount = 1e19; // 10
 
-    // Events: a way to emit log statements from smart contract that can be listened to by external parties
-    event GreetingChange(address greetingSetter, string newGreeting, bool premium, uint256 value);
+    address[] private _stakingUsers;
+    mapping(address => uint256) private _userArrayIndex;
 
-    // Constructor: Called once on contract deployment
-    // Check packages/hardhat/deploy/00_deploy_your_contract.ts
-    constructor(address _owner) {
-        owner = _owner;
+    struct User {
+        bool whitelisted;
+        uint256 staked;
+        int256 scaledPayout;
     }
 
-    // Modifier: used to define a set of rules that must be met before or after a function is executed
-    // Check the withdraw() function
-    modifier isOwner() {
-        // msg.sender: predefined variable that represents address of the account that called the current function
-        require(msg.sender == owner, "Not the Owner");
-        _;
+struct Info {
+    uint256 totalStaked;
+    mapping(address => User) users;
+    uint256 scaledPayoutPerToken;
+    address[] _stakingUsers;
+    mapping(address => uint256) userArrayIndex;
+}
+
+    Info private info;
+
+    event Whitelist(address indexed user, bool status);
+    event Stake(address indexed owner, uint256 tokens);
+    event Unstake(address indexed owner, uint256 tokens);
+    event Collect(address indexed owner, uint256 tokens);
+    event Fee(uint256 tokens);
+
+constructor(uint256 initialSupply) ERC20("ACID", "ACID") {
+    _mint(msg.sender, initialSupply);
+    emit Transfer(address(0x0), msg.sender, initialSupply);
+     info._stakingUsers = new address[](0);
+}
+
+    function whitelist(address _user, bool _status) public {
+        require(msg.sender == _user || msg.sender == owner(), "Invalid whitelist caller");
+        info.users[_user].whitelisted = _status;
+        emit Whitelist(_user, _status);
     }
 
-    /**
-     * Function that allows anyone to change the state variable "greeting" of the contract and increase the counters
-     *
-     * @param _newGreeting (string memory) - new greeting to save on the contract
-     */
-    function setGreeting(string memory _newGreeting) public payable {
-        // Print data to the hardhat chain console. Remove when deploying to a live network.
-        console.log("Setting new greeting '%s' from %s",  _newGreeting, msg.sender);
-
-        // Change state variables
-        greeting = _newGreeting;
-        totalCounter += 1;
-        userGreetingCounter[msg.sender] += 1;
-
-        // msg.value: built-in global variable that represents the amount of ether sent with the transaction
-        if (msg.value > 0) {
-            premium = true;
-        } else {
-            premium = false;
-        }
-
-        // emit: keyword used to trigger an event
-        emit GreetingChange(msg.sender, _newGreeting, msg.value > 0, 0);
+function stake(uint256 _tokens) external returns (bool) {
+    require(_tokens >= _minStakeAmount, "Stake amount is too low");
+    require(balanceOf(msg.sender) >= _tokens, "Insufficient balance for stake");
+    User storage user = info.users[msg.sender];
+    if (!user.whitelisted) {
+        user.whitelisted = true;
+        emit Whitelist(msg.sender, true);
     }
+if (user.staked == 0) {
+    uint256 length = info._stakingUsers.length;
+    info._stakingUsers.push(msg.sender);
+    info.userArrayIndex[msg.sender] = length;
+}
+    require(super.transfer(address(this), _applyStakeFee(msg.sender, _tokens)), "Stake transfer failed");
+    user.staked += _tokens;
+    info.totalStaked += _tokens;
+    user.scaledPayout += int256(info.scaledPayoutPerToken * _tokens);
+    emit Stake(msg.sender, _tokens);
+    return true;
+}
 
-    /**
-     * Function that allows the owner to withdraw all the Ether in the contract
-     * The function can only be called by the owner of the contract as defined by the isOwner modifier
-     */
-    function withdraw() isOwner public {
-        (bool success,) = owner.call{value: address(this).balance}("");
-        require(success, "Failed to send Ether");
+function unstake(uint256 _tokens) external returns (bool) {
+require(_tokens <= balanceOfStaked(msg.sender), "Insufficient staked balance for unstake");
+User storage user = info.users[msg.sender];
+user.staked -= _tokens;
+info.totalStaked -= _tokens;
+user.scaledPayout -= int256(info.scaledPayoutPerToken * _tokens);
+uint256 withdrawAmount = _tokens;
+if (_stakeFee > 0) {
+uint256 fee = (_tokens * _stakeFee) / 100;
+withdrawAmount -= fee;
+super.transfer(owner(), fee);
+emit Fee(fee);
+}
+require(super.transfer(msg.sender, withdrawAmount), "Unstake transfer failed");
+emit Unstake(msg.sender, _tokens);
+return true;
+}
+
+function collect() external returns (bool) {
+    User storage user = info.users[msg.sender];
+    require(user.staked > 0, "No staked balance to collect");
+    uint256 payout = uint256(int256(info.scaledPayoutPerToken * user.staked) - user.scaledPayout) / FLOAT_SCALAR;
+    user.scaledPayout = int256(info.scaledPayoutPerToken * user.staked);
+    require(super.transfer(msg.sender, payout), "Collect transfer failed");
+    emit Collect(msg.sender, payout);
+    return true;
+}
+
+function balanceOfStaked(address _user) public view returns (uint256) {
+    return info.users[_user].staked;
+}
+
+function setStakeFee(uint256 _fee) external onlyOwner {
+    require(_fee <= 10, "Stake fee is too high");
+    _stakeFee = _fee;
+}
+
+function setMinStakeAmount(uint256 _amount) external onlyOwner {
+    _minStakeAmount = _amount;
+}
+
+function _applyStakeFee(address _from, uint256 _tokens) private returns (uint256) {
+    if (_stakeFee == 0) {
+        return _tokens;
     }
+    uint256 fee = (_tokens * _stakeFee) / 100;
+    super.transfer(owner(), fee);
+    emit Fee(fee);
+    return _tokens - fee;
+}
 
-    /**
-     * Function that allows the contract to receive ETH
-     */
-    receive() external payable {}
+function _updateScaledPayoutPerToken(uint256 _stakedDelta, bool _add) private {
+    if (info.totalStaked == 0) {
+        return;
+    }
+    uint256 poolPayoutDelta = (_stakedDelta * FLOAT_SCALAR) / info.totalStaked;
+    if (_add) {
+        info.scaledPayoutPerToken += poolPayoutDelta;
+    } else {
+        info.scaledPayoutPerToken -= poolPayoutDelta;
+    }
+}
+
+function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    _updateScaledPayoutPerToken(0, true);
+    return super.transfer(recipient, amount);
+}
+
+function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+    _updateScaledPayoutPerToken(0, true);
+    return super.transferFrom(sender, recipient, amount);
+}
+
+function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+    _updateScaledPayoutPerToken(info.users[from].staked + info.users[to].staked, false);
+}
+
 }
