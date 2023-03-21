@@ -1,0 +1,31 @@
+//  Component takes in a univ3 pool address and involvingETH boolean
+//  returns a struct with the pool information for the rest of the app
+import { useState } from 'react'
+import { tickToPrice, Pool, Position, nearestUsableTick, TICK_SPACINGS, TickMath, maxLiquidityForAmounts } from '@uniswap/v3-sdk/dist/'
+
+export default function useUniV3info(lpAddress:string, involvingEth:boolean){
+
+    const lpTokenSymbol = "UniV3"
+    const lpTokenDecimals = "18"
+    const lpTokenBalance = "0"
+    const lpTokenApproval = "0"
+    // const fee = await blockchainCall(lpToken.methods.fee)
+    // const slot = await blockchainCall(lpToken.methods.slot0)
+    // var uniswapTokens = await Promise.all([
+    //     // await blockchainCall(lpToken.methods.token0),
+    //     // await blockchainCall(lpToken.methods.token1)
+    // ].map(async tkAddress => {
+        // const currentToken = await loadTokenFromAddress({ context, ...web3Data, seaport }, tkAddress)
+        // return new Token(chainId, tkAddress, parseInt(currentToken.decimals), currentToken.symbol, currentToken.name)
+    // }))
+    // console.log("Slot", farmSetup.infoIndex, {
+    //     tick: slot.tick,
+    //     sqrtPriceX96: slot.sqrtPriceX96,
+    //     tickLower : farmSetupInfo.tickLower,
+    //     tickUpper : farmSetupInfo.tickUpper,
+    //     fee,
+    //     inRange : parseInt(farmSetupInfo.tickLower) >= parseInt(slot.tick) && parseInt(slot.tick) <= parseInt(farmSetupInfo.tickUpper)
+    // })
+    // setLpTokenInfo({ uniswapTokens, fee, contract: lpToken, symbol: lpTokenSymbol, decimals: lpTokenDecimals, balance: lpTokenBalance, approval: parseInt(lpTokenApproval) !== 0 && parseInt(lpTokenApproval) >= parseInt(lpTokenBalance) })
+}
+    

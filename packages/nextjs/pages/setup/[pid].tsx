@@ -100,6 +100,10 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
     minStakeableAmount: "Min Stakeable Amount",
   };
 
+  //TODO: Pass the data to the      <AddLiquidityForm />
+
+  // lpTokenAddress: data[1].liquidityPoolTokenAddress ? data[1].liquidityPoolTokenAddress : "",
+  // involvinEth: data[1].involvingETH ? data[1].involvingETH : "notfound",
   return (
     <Card className={classes.card}>
       <CardHeader className={classes.header} title="Data" />
@@ -130,7 +134,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
           {children}
         </Typography>
       </CardContent>
-      <AddLiquidityForm />
+      <AddLiquidityForm lpTokenAddress={data.lpTokenAddress} involvingEth={data.involvingEth} />
     </Card>
   );
 };
