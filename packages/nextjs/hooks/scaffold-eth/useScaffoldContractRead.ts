@@ -11,7 +11,7 @@ import { BigNumber } from "ethers";
  * @param args - args to be passed to the function call
  * @param readConfig - extra wagmi configuration
  */
-export const useScaffoldContractRead = <TReturn extends BigNumber | string | boolean = any>(
+export const useScaffoldContractRead = <TReturn extends BigNumber | string | boolean | any[] = any>(
   contractName: string,
   functionName: string,
   args?: any[],
