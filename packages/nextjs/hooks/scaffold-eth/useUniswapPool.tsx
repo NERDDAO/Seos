@@ -20,50 +20,36 @@ export const useUniswapPool = (addr: string, tickLower: number, tickUpper: numbe
   const lpTokenApproval = "0";
   const fee = useScaffoldPoolRead(addr, "fee");
   const slot = useScaffoldPoolRead(addr, "slot0");
-  const uniswapTokens = Promise.all([useScaffoldPoolRead(addr, "token0"), useScaffoldPoolRead(addr, "token1")]);
-  // weird git thinks its an empty commit
-  uniswapTokens
-    .then(results => {
-      results.forEach((result, index) => {
-        const tokenAddress = result.data;
-        console.log(`Token ${index}: ${tokenAddress}`);
-      });
-    })
-    .catch(error => {
-      console.log(error);
-    });
-  try {
-    uniswapTokens
-      .then(results => {
-        const token0Address = results[0].data;
-        const token1Address = results[1].data;
+  console.log("⚡️ ~ file: useUniswapPool.tsx:25 ~ slot", slot);
+  const token0AddressData = useScaffoldPoolRead(addr, "token0");
+  const token1AddressData = useScaffoldPoolRead(addr, "token1");
 
-        const token0 = new Token(1, token0Address, 18); // assuming 18 decimal places
-        const token1 = new Token(1, token1Address, 18);
+  useEffect(() => {
+    if (
+      fee.data &&
+      slot.data &&
+      token0AddressData.data &&
+      token1AddressData.data &&
+      tickLower !== undefined &&
+      tickUpper !== undefined
+    ) {
+      const token0 = new Token(1, token0AddressData.data, 18); // assuming 18 decimal places
+      const token1 = new Token(1, token1AddressData.data, 18);
 
-        const currentPrice = tickToPrice(token0, token1, slot.data.tick);
+      // Uncomment the lines below when using the current price to calculate tickLower and tickUpper
+      // const currentPrice = tickToPrice(token0, token1, slot.data.tick);
+      // const [tickLower, tickUpper] = [
+      //   currentPrice.mul(new Percent(0.9, 100)).toFixed(0),
+      //   currentPrice.mul(new Percent(1.1, 100)).toFixed(0),
+      // ].map(price => nearestUsableTick(price));
 
-        // const [tickLower, tickUpper] = [
-        //   currentPrice.mul(new Percent(0.9, 100)).toFixed(0), // 10% lower than current price
-        //   currentPrice.mul(new Percent(1.1, 100)).toFixed(0), // 10% higher than current price
-        // ].map(price => nearestUsableTick(price));
+      const a = tickToPrice(token0, token1, tickLower).toSignificant(15);
+      const b = tickToPrice(token1, token0, tickUpper).toSignificant(15);
+      const c = tickToPrice(token0, token1, parseInt(slot.data[1])).toSignificant(15);
 
-        // console.log(`tickLower: ${tickLower}, tickUpper: ${tickUpper}`);
-
-        const a = tickToPrice(token0, token1, tickLower).toSignificant(15);
-
-        const b = tickToPrice(token1, token0, tickUpper).toSignificant(15);
-
-        const c = tickToPrice(token0, token1, parseInt(slot.data.tick)).toSignificant(15);
-
-        console.log(`a: ${a}, b: ${b}, c: ${c}`);
-      })
-      .catch(error => {
-        console.log(error);
-      });
-  } catch (e) {
-    console.log(e);
-  }
+      console.log("TICKDATA", `a: ${a}, b: ${b}, c: ${c}`);
+    }
+  }, [addr, fee.data, slot.data, token0AddressData.data, token1AddressData.data, tickLower, tickUpper]);
 };
 
 //         var diluted = Math.abs(parseInt(setupInfo.tickUpper) - parseInt(setupInfo.tickLower)) >= 180000;
