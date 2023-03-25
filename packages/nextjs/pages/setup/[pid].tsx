@@ -84,12 +84,13 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
       startBlock: data[0].startBlock ? epochToDateAndTime(data[0].startBlock.toString()) : "",
       rewardPerBlock: data[0].rewardPerBlock ? utils.formatEther(data[0].rewardPerBlock) : "",
       totalSupply: data[0].totalSupply ? utils.formatEther(data[0].totalSupply) : "",
-      //@dev
-      //handle boolean type there's  prob better way to do this
+      //handle boolean type: there's  prob better way to do this
       involvingEth: data[1].involvingETH == true ? "TRUE" : data[1].involvingETH == false ? "FALSE" : "undef",
       lpTokenAddress: data[1].liquidityPoolTokenAddress ? data[1].liquidityPoolTokenAddress : "",
       MainToken: data[1].mainTokenAddress ? data[1].mainTokenAddress : "",
       minStakeableAmount: data[1].minStakeable ? utils.formatEther(data[1].minStakeable) : "notfound",
+      tickLower: data[1].tickLower ? data[1].tickLower : "",
+      tickUpper: data[1].tickUpper ? data[1].tickUpper : "",
     };
     console.log("⚡️ ~ file: [pid].tsx:82 ~ data:", data);
   }
@@ -102,6 +103,18 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
     MainToken: "Main Token",
     minStakeableAmount: "Min Stakeable Amount",
   };
+
+  const [lptokenAddress, setLptokenAddress] = useState("");
+  const [tickLower, setTickLower] = useState("0");
+  const [tickUpper, setTickUpper] = useState("0");
+
+  useEffect(() => {
+    if (data) {
+      setLptokenAddress(data.lpTokenAddress);
+      setTickLower(data.tickLower);
+      setTickUpper(data.tickUpper);
+    }
+  }, [data]);
 
   return (
     <Card className={classes.card}>
@@ -133,7 +146,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
           {children}
         </Typography>
       </CardContent>
-      <AddLiquidityForm />
+      <AddLiquidityForm lptokenAddress={lptokenAddress} tickLower={tickLower} tickUpper={tickUpper} />
     </Card>
   );
 };

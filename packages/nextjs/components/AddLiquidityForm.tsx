@@ -9,8 +9,11 @@ import { useAppStore } from "~~/services/store/store";
 import { UserPositions } from "~~/services/store/slices/querySlice";
 import { ethers } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
+import { useUniswapPool } from "~~/hooks/scaffold-eth";
+import { useScaffoldPoolRead } from "~~/hooks/scaffold-eth";
 
-const AddLiquidityForm = () => {
+function AddLiquidityForm(props: any) {
+  const { lptokenAddress, tickLower, tickUpper } = props;
   const addressZero = ethers.constants.AddressZero;
   const [showPositionOwner, setShowPositionOwner] = useState(false);
   const { tempSlice } = useAppStore();
@@ -35,6 +38,15 @@ const AddLiquidityForm = () => {
   const outputTokenDecimals = 18;
 
   const provider = useProvider();
+  const addr = lptokenAddress;
+  console.log("lptoken:", lptokenAddress);
+  const unipool = useUniswapPool(addr, tickLower, tickUpper);
+  console.log("TickLower:", tickLower);
+  console.log("TickUpper:", tickUpper);
+  const lpTokenSymbol = "UniV3";
+  const lpTokenDecimals = 18;
+  const lpTokenBalance = "0";
+  const lpTokenApproval = "0";
 
   // Uses Graph Protocol to fetch existing indexed positions
 
@@ -73,9 +85,21 @@ const AddLiquidityForm = () => {
     }
   };
   // Get prices from uniswap
+
+  const fee = useScaffoldPoolRead(addr, "fee");
+  const slot = useScaffoldPoolRead(addr, "slot0");
+  const uniswapTokens = Promise.all([useScaffoldPoolRead(addr, "token0"), useScaffoldPoolRead(addr, "token1")]);
+
+  console.log("uniswapTokens", uniswapTokens);
+
   useEffect(() => {
     async function fetchData() {
       try {
+        console.log("uniswapTokens", uniswapTokens);
+        console.log("fee", fee);
+        console.log("slot", slot);
+
+        // Old logic
         const price = await fetchPool(
           provider,
           inputTokenAddress,
@@ -199,6 +223,7 @@ const AddLiquidityForm = () => {
         Add Liquidity
       </Typography>
       <form>
+        <div> lpTokenAddress: {addr}</div>
         <div> Setup Index: {tempSlice.pid} </div>
         <div> Position ID: {positionId} </div>
         <div>
@@ -307,6 +332,6 @@ const AddLiquidityForm = () => {
       </form>
     </Grid>
   );
-};
+}
 
 export default AddLiquidityForm;
