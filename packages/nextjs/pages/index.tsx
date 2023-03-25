@@ -54,7 +54,7 @@ const Home: NextPage = () => {
   const { isFetching, data } = useScaffoldContractRead<any[]>(contractName, functionName, undefined, {
     select: data => {
       // @ts-expect-error
-      return data.filter((setup: any) => setup.rewardPerBlock?.toNumber() > 0);
+      return data.filter((setup: any) => setup.active);
     },
   });
   console.log("⚡️ ~ file: index.tsx:54 ~ isFetching:", isFetching);
@@ -89,15 +89,22 @@ const Home: NextPage = () => {
         </div>
       ) : (
         <Grid container spacing={4} className={classes.gridContainer} justifyContent="center">
-          {data?.map((setup: any, index: any) => (
-            <Grid key={index} item xs={12} sm={6} md={4} onClick={() => handleClick(index)}>
+          {data?.map((setup: any) => (
+            <Grid
+              key={setup.infoIndex.toString()}
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              onClick={() => handleClick(setup.infoIndex.toString())}
+            >
               <Card className={classes.root}>
                 <CardContent>
                   <Typography className={classes.title} color="textSecondary" gutterBottom>
                     PID
                   </Typography>
                   <Typography variant="h5" component="h2">
-                    {index}
+                    {setup.infoIndex.toString()}
                   </Typography>
                   <Typography className={classes.title} color="textSecondary" gutterBottom>
                     Reward Per Block
