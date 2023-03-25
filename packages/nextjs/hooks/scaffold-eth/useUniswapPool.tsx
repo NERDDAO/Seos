@@ -21,7 +21,7 @@ export const useUniswapPool = (addr: string, tickLower: number, tickUpper: numbe
   const fee = useScaffoldPoolRead(addr, "fee");
   const slot = useScaffoldPoolRead(addr, "slot0");
   const uniswapTokens = Promise.all([useScaffoldPoolRead(addr, "token0"), useScaffoldPoolRead(addr, "token1")]);
-
+  // weird git thinks its an empty commit
   uniswapTokens
     .then(results => {
       results.forEach((result, index) => {
