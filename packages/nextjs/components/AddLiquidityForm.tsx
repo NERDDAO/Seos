@@ -39,11 +39,8 @@ function AddLiquidityForm(props: any) {
 
   const provider = useProvider();
   const addr = lptokenAddress;
-  console.log("lptoken:", lptokenAddress);
   const unipool = useUniswapPool(addr, tickLower, tickUpper, involvingETH);
   console.log("unipool:", unipool);
-  console.log("TickLower:", tickLower);
-  console.log("TickUpper:", tickUpper);
   const lpTokenSymbol = "UniV3";
   const lpTokenDecimals = 18;
   const lpTokenBalance = "0";
@@ -56,13 +53,10 @@ function AddLiquidityForm(props: any) {
 
   const handleExecuteQuery = async (address: string) => {
     const result = await executeQuery(address);
-    console.log("result:", result);
     setUserPositions(result.user?.positions || []);
-    console.log("userPositions:", userPositions);
   };
 
   useEffect(() => {
-    console.log("handleExecuteQuery running with address:", account?.address);
     if (account?.address) {
       handleExecuteQuery(account?.address);
     }
@@ -87,19 +81,9 @@ function AddLiquidityForm(props: any) {
   };
   // Get prices from uniswap
 
-  const fee = useScaffoldPoolRead(addr, "fee");
-  const slot = useScaffoldPoolRead(addr, "slot0");
-  const uniswapTokens = Promise.all([useScaffoldPoolRead(addr, "token0"), useScaffoldPoolRead(addr, "token1")]);
-
-  console.log("uniswapTokens", uniswapTokens);
-
   useEffect(() => {
     async function fetchData() {
       try {
-        console.log("uniswapTokens", uniswapTokens);
-        console.log("fee", fee);
-        console.log("slot", slot);
-
         // Old logic
         const price = await fetchPool(
           provider,
