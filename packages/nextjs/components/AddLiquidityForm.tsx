@@ -13,7 +13,7 @@ import { useUniswapPool } from "~~/hooks/scaffold-eth";
 import { useScaffoldPoolRead } from "~~/hooks/scaffold-eth";
 
 function AddLiquidityForm(props: any) {
-  const { lptokenAddress, tickLower, tickUpper } = props;
+  const { lptokenAddress, tickLower, tickUpper, involvingETH } = props;
   const addressZero = ethers.constants.AddressZero;
   const [showPositionOwner, setShowPositionOwner] = useState(false);
   const { tempSlice } = useAppStore();
@@ -40,7 +40,8 @@ function AddLiquidityForm(props: any) {
   const provider = useProvider();
   const addr = lptokenAddress;
   console.log("lptoken:", lptokenAddress);
-  const unipool = useUniswapPool(addr, tickLower, tickUpper);
+  const unipool = useUniswapPool(addr, tickLower, tickUpper, involvingETH);
+  console.log("unipool:", unipool);
   console.log("TickLower:", tickLower);
   console.log("TickUpper:", tickUpper);
   const lpTokenSymbol = "UniV3";

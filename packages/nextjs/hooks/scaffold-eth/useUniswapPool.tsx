@@ -1,129 +1,99 @@
-import {
-  tickToPrice,
-  Pool,
-  Position,
-  nearestUsableTick,
-  TICK_SPACINGS,
-  TickMath,
-  maxLiquidityForAmounts,
-} from "@uniswap/v3-sdk/dist/";
-import { Token, Percent } from "@uniswap/sdk-core/dist";
-import { useDeployedPoolInfo } from "~~/hooks/scaffold-eth";
+import { tickToPrice } from "@uniswap/v3-sdk/dist/";
+import { Token } from "@uniswap/sdk-core/dist/";
 import { useScaffoldPoolRead } from "~~/hooks/scaffold-eth";
 import { useEffect, useState } from "react";
 
-export const useUniswapPool = (addr: string, tickLower: number, tickUpper: number) => {
-  const [lpTokenInfo, setLpTokenInfo] = useState([]);
-  const lpTokenSymbol = "UniV3";
-  const lpTokenDecimals = "18";
-  const lpTokenBalance = "0";
-  const lpTokenApproval = "0";
-  const fee = useScaffoldPoolRead(addr, "fee");
-  const slot = useScaffoldPoolRead(addr, "slot0");
-  console.log("⚡️ ~ file: useUniswapPool.tsx:25 ~ slot", slot);
-  const token0AddressData = useScaffoldPoolRead(addr, "token0");
-  const token1AddressData = useScaffoldPoolRead(addr, "token1");
+const VOID_ETHEREUM_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // Add this constant to handle ETH address
 
-  useEffect(() => {
-    if (
-      fee.data &&
-      slot.data &&
-      token0AddressData.data &&
-      token1AddressData.data &&
-      tickLower !== undefined &&
-      tickUpper !== undefined
-    ) {
-      const token0 = new Token(1, token0AddressData.data, 18); // assuming 18 decimal places
-      const token1 = new Token(1, token1AddressData.data, 18);
-
-      // Uncomment the lines below when using the current price to calculate tickLower and tickUpper
-      // const currentPrice = tickToPrice(token0, token1, slot.data.tick);
-      // const [tickLower, tickUpper] = [
-      //   currentPrice.mul(new Percent(0.9, 100)).toFixed(0),
-      //   currentPrice.mul(new Percent(1.1, 100)).toFixed(0),
-      // ].map(price => nearestUsableTick(price));
-
-      const a = tickToPrice(token0, token1, tickLower).toSignificant(15);
-      const b = tickToPrice(token1, token0, tickUpper).toSignificant(15);
-      const c = tickToPrice(token0, token1, parseInt(slot.data[1])).toSignificant(15);
-
-      console.log("TICKDATA", `a: ${a}, b: ${b}, c: ${c}`);
-    }
-  }, [addr, fee.data, slot.data, token0AddressData.data, token1AddressData.data, tickLower, tickUpper]);
+const fetchEthereumPrice = async () => {
+  // Replace this with your logic to fetch ETH price
+  // You can use a price oracle or an API call
+  return 1753; // dummy value
 };
 
-//         var diluted = Math.abs(parseInt(setupInfo.tickUpper) - parseInt(setupInfo.tickLower)) >= 180000;
-//         var tickData = {
-//           diluted,
-//           maxPrice: tickToPrice(
-//             lpTokenInfo.uniswapTokens[1 - secondTokenIndex],
-//             lpTokenInfo.uniswapTokens[secondTokenIndex],
-//             parseInt(setupInfo.tickLower),
-//           ).toSignificant(4),
-//           minPrice: tickToPrice(
-//             lpTokenInfo.uniswapTokens[1 - secondTokenIndex],
-//             lpTokenInfo.uniswapTokens[secondTokenIndex],
-//             parseInt(setupInfo.tickUpper),
-//           ).toSignificant(4),
-//           currentPrice: tickToPrice(
-//             lpTokenInfo.uniswapTokens[1 - secondTokenIndex],
-//             lpTokenInfo.uniswapTokens[secondTokenIndex],
-//             parseInt(slot.tick),
-//           ).toSignificant(4),
-//           cursorNumber: !(c > a) ? 100 : !(c < b) ? 0 : null,
-//           outOfRangeLower: parseInt(slot.tick) <= parseInt(setupInfo.tickLower),
-//           outOfRangeUpper: parseInt(slot.tick) >= parseInt(setupInfo.tickUpper),
-//           tickLowerUSDPrice: 0,
-//           tickUpperUSDPrice: 0,
-//           tickCurrentUSDPrice: 0,
-//         };
-//         if (secondTokenIndex === 1) {
-//           var maxPrice = tickData.maxPrice;
-//           tickData.maxPrice = tickData.minPrice;
-//           tickData.minPrice = maxPrice;
-//         }
-//         if (tickData.cursorNumber !== 0 && tickData.cursorNumber !== 100) {
-//           tickData.cursorNumber = (1 / ((Math.sqrt(a * b) - Math.sqrt(b * c)) / (c - Math.sqrt(b * c)) + 1)) * 100;
-//         }
-//         tickData.cursor = formatMoneyUniV3(
-//           secondTokenIndex === 1 ? 100 - tickData.cursorNumber : tickData.cursorNumber,
-//           2,
-//         );
+export const useUniswapPool = (addr: string, tickLower: number, tickUpper: number, involvingETH: boolean) => {
+  const [poolData, setPoolData] = useState({});
+  const fee = useScaffoldPoolRead(addr, "fee");
+  const slot = useScaffoldPoolRead(addr, "slot0");
+  const token0Address = useScaffoldPoolRead(addr, "token0");
+  const token1Address = useScaffoldPoolRead(addr, "token1");
 
-//         var tokensForPrice = lpTokenInfo.uniswapTokens.map(it =>
-//           it.address === ethereumAddress ? VOID_ETHEREUM_ADDRESS : it.address,
-//         );
-//         var ethIndex = tokensForPrice.indexOf(VOID_ETHEREUM_ADDRESS);
-//         if (ethIndex !== -1) {
-//           var ethPrice = await getEthereumPrice({ context });
-//           tickData.tickLowerUSDPrice =
-//             formatNumber(
-//               tickToPrice(
-//                 lpTokenInfo.uniswapTokens[1 - ethIndex],
-//                 lpTokenInfo.uniswapTokens[ethIndex],
-//                 parseInt(setupInfo.tickLower),
-//               ).toSignificant(15),
-//             ) * ethPrice;
-//           tickData.tickUpperUSDPrice =
-//             formatNumber(
-//               tickToPrice(
-//                 lpTokenInfo.uniswapTokens[1 - ethIndex],
-//                 lpTokenInfo.uniswapTokens[ethIndex],
-//                 parseInt(setupInfo.tickUpper),
-//               ).toSignificant(15),
-//             ) * ethPrice;
-//           tickData.tickCurrentUSDPrice =
-//             formatNumber(
-//               tickToPrice(
-//                 lpTokenInfo.uniswapTokens[1 - ethIndex],
-//                 lpTokenInfo.uniswapTokens[ethIndex],
-//                 parseInt(slot.tick),
-//               ).toSignificant(15),
-//             ) * ethPrice;
-//           tickData.cursor = formatMoneyUniV3(ethIndex === 1 ? 100 - tickData.cursorNumber : tickData.cursorNumber, 2);
-//         }
-//         setTickData(tickData);
-//       } catch (e) {}
-//     }),
-//   [lpTokenInfo, secondTokenIndex, setupInfo],
-// );
+  useEffect(() => {
+    const fetchPoolData = async () => {
+      if (fee && slot && token0Address && token1Address && tickLower !== undefined && tickUpper !== undefined) {
+        const token0 = new Token(1, token0Address.data, 18); // assuming 18 decimal places
+        const token1 = new Token(1, token1Address.data, 18);
+
+        const tickLowerPrice = tickToPrice(token0, token1, tickLower).toSignificant(15);
+        const tickUpperPrice = tickToPrice(token1, token0, tickUpper).toSignificant(15);
+        const currentTickPrice = tickToPrice(token0, token1, parseInt(slot.data[1])).toSignificant(15);
+
+        console.log("TICKDATA", {
+          tickLowerPrice,
+          tickUpperPrice,
+          currentTickPrice,
+        });
+
+        const ethPrice = await fetchEthereumPrice();
+        const isToken0ETH = token0Address.data.toLowerCase() === VOID_ETHEREUM_ADDRESS.toLowerCase();
+        const isToken1ETH = token1Address.data.toLowerCase() === VOID_ETHEREUM_ADDRESS.toLowerCase();
+
+        if (involvingETH === true) {
+          const ethIndex = isToken0ETH ? 0 : 1;
+
+          const tickLowerUSDPrice = parseFloat(tickLowerPrice) * ethPrice;
+          const tickUpperUSDPrice = parseFloat(tickUpperPrice) * ethPrice;
+          const tickCurrentUSDPrice = parseFloat(currentTickPrice) * ethPrice;
+
+          const tickLowerPriceFloat = parseFloat(tickLowerPrice);
+          const tickUpperPriceFloat = parseFloat(tickUpperPrice);
+          const currentTickPriceFloat = parseFloat(currentTickPrice);
+
+          const cursorNumber =
+            (1 /
+              ((Math.sqrt(tickLowerPriceFloat * tickUpperPriceFloat) -
+                Math.sqrt(tickUpperPriceFloat * currentTickPriceFloat)) /
+                (currentTickPriceFloat - Math.sqrt(tickUpperPriceFloat * currentTickPriceFloat)) +
+                1)) *
+            100;
+          const formattedCursorNumber = ethIndex === 1 ? 100 - cursorNumber : cursorNumber;
+
+          console.log("USD Price Data", {
+            tickLowerUSDPrice,
+            tickUpperUSDPrice,
+            tickCurrentUSDPrice,
+          });
+
+          const cursorData = {
+            tickLowerUSDPrice,
+            tickUpperUSDPrice,
+            tickCurrentUSDPrice,
+            formattedCursorNumber,
+          };
+
+          setPoolData({ ...poolData, cursorData });
+        } else {
+          const tickLowerPriceFloat = parseFloat(tickLowerPrice);
+          const tickUpperPriceFloat = parseFloat(tickUpperPrice);
+          const currentTickPriceFloat = parseFloat(currentTickPrice);
+
+          const cursorNumber =
+            (1 /
+              ((Math.sqrt(tickLowerPriceFloat * tickUpperPriceFloat) -
+                Math.sqrt(tickUpperPriceFloat * currentTickPriceFloat)) /
+                (currentTickPriceFloat - Math.sqrt(tickUpperPriceFloat * currentTickPriceFloat)) +
+                1)) *
+            100;
+
+          console.log("Cursor Number (non-USD)", { cursorNumber });
+
+          setPoolData({ ...poolData, cursorNumber });
+        }
+      }
+    };
+
+    fetchPoolData();
+  }, [addr, tickLower, tickUpper]);
+
+  return poolData;
+};

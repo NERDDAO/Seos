@@ -85,7 +85,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
       rewardPerBlock: data[0].rewardPerBlock ? utils.formatEther(data[0].rewardPerBlock) : "",
       totalSupply: data[0].totalSupply ? utils.formatEther(data[0].totalSupply) : "",
       //handle boolean type: there's  prob better way to do this
-      involvingEth: data[1].involvingETH == true ? "TRUE" : data[1].involvingETH == false ? "FALSE" : "undef",
+      involvingEth: data[1].involvingETH == true ? true : data[1].involvingETH == false ? false : "undef",
       lpTokenAddress: data[1].liquidityPoolTokenAddress ? data[1].liquidityPoolTokenAddress : "",
       MainToken: data[1].mainTokenAddress ? data[1].mainTokenAddress : "",
       minStakeableAmount: data[1].minStakeable ? utils.formatEther(data[1].minStakeable) : "notfound",
@@ -107,12 +107,14 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
   const [lptokenAddress, setLptokenAddress] = useState("");
   const [tickLower, setTickLower] = useState("0");
   const [tickUpper, setTickUpper] = useState("0");
+  const [involvingETH, setInvolvingETH] = useState(false);
 
   useEffect(() => {
     if (data) {
       setLptokenAddress(data.lpTokenAddress);
       setTickLower(data.tickLower);
       setTickUpper(data.tickUpper);
+      setInvolvingETH(data.involvingEth);
     }
   }, [data]);
 
@@ -146,7 +148,12 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
           {children}
         </Typography>
       </CardContent>
-      <AddLiquidityForm lptokenAddress={lptokenAddress} tickLower={tickLower} tickUpper={tickUpper} />
+      <AddLiquidityForm
+        lptokenAddress={lptokenAddress}
+        tickLower={tickLower}
+        tickUpper={tickUpper}
+        involvingETH={involvingETH}
+      />
     </Card>
   );
 };
