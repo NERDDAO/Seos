@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
+import { useEthPrice, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { TextField, Button, Grid, Typography, FormControlLabel, Checkbox } from "@material-ui/core";
 import BigNumber from "bignumber.js";
-import { fetchPool } from "~~/utils/scaffold-eth/fetchPool";
 import { useAccount, useProvider } from "wagmi";
 import { useAccountBalance } from "~~/hooks/scaffold-eth/useAccountBalance";
 import { useAppStore } from "~~/services/store/store";
@@ -24,29 +23,19 @@ function AddLiquidityForm(props: any) {
   const [percentageSetting, setPercentageSetting] = useState(";"); // default to 1%
   const [lastUpdatedField, setLastUpdatedField] = useState("");
   const [ethPrice, setEthPrice] = useState(1);
+  const [currentPrice, setCurrentPrice] = useState(0);
 
   const [error, setError] = useState("");
 
   const contractName = "FarmMainRegularMinStake";
-  const functionName = "addLiquidity";
   const account = useAccount();
   const { balance, price, isError, onToggleBalance, isEthBalance } = useAccountBalance(account.address);
 
-  const inputTokenAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F"; // DAI token address
-  const outputTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH token address
-  const inputTokenDecimals = 18;
-  const outputTokenDecimals = 18;
-
   const provider = useProvider();
   const addr = lptokenAddress;
-
-  const lpTokenSymbol = "UniV3";
-  const lpTokenDecimals = 18;
-  const lpTokenBalance = "0";
-  const lpTokenApproval = "0";
-
   // Uses Graph Protocol to fetch existing indexed positions
-
+  const eth = useEthPrice();
+  console.log("eth:", eth);
   const { executeQuery } = useAppStore(state => state.querySlice);
   const [userPositions, setUserPositions] = useState<Array<UserPositions>>([]);
 
@@ -60,33 +49,71 @@ function AddLiquidityForm(props: any) {
       handleExecuteQuery(account?.address);
     }
   }, [account?.address]);
+
+  // Checks graph query result if user has a position else returns a string this happens when user has no position
+
+  const positionId = userPositions?.length > 0 ? userPositions[0].id : null;
+
+  // Get univ3 pool data
+  const unipool = useUniswapPool(addr, tickLower, tickUpper, involvingETH, eth);
+  console.log("unipool:", unipool);
+  // Define an interface for the unipool object
+  interface UnipoolData {
+    cursorData: {
+      currentTickPrice: string;
+      formattedCursorNumber: number;
+      tickCurrentUSDPrice: number;
+      tickLowerUSDPrice: number;
+      tickUpperUSDPrice: number;
+    };
+  }
+
+  // Use a type assertion to cast unipool to the UnipoolData type
+  const unipoolData = unipool as UnipoolData;
+
+  // Destructure unipoolData to get each variable
+  try {
+    if (unipoolData.cursorData !== null) {
+      const {
+        cursorData,
+        cursorData: {
+          currentTickPrice,
+          formattedCursorNumber,
+          tickCurrentUSDPrice,
+          tickLowerUSDPrice,
+          tickUpperUSDPrice,
+        },
+      } = unipoolData;
+
+      // Get the current price of the pool
+      const price = parseFloat(currentTickPrice);
+      if (currentPrice == 0) {
+        setCurrentPrice(price);
+      } else {
+        console.log("currentPrice", currentPrice);
+      }
+    }
+  } catch (e) {
+    console.log("error:", e);
+  }
+
   useEffect(() => {
     async function fetchData() {
       try {
         // Old logic
-        const price = await fetchPool(
-          provider,
-          inputTokenAddress,
-          outputTokenAddress,
-          inputTokenDecimals,
-          outputTokenDecimals,
-        );
-        console.log(`The price of 1 WETH in DAI is: ${price}`);
-        setEthPrice(price);
-
         const amount0Value = new BigNumber(amount0);
         const amount1Value = new BigNumber(amount1);
 
         if (lastUpdatedField === "amount0") {
-          if (amount0Value.isGreaterThan(0) && price) {
-            const correspondingAmount1 = amount0Value.dividedBy(price);
+          if (amount0Value.isGreaterThan(0) && currentPrice) {
+            const correspondingAmount1 = amount0Value.dividedBy(currentPrice);
             setAmount1(correspondingAmount1.toString());
           } else {
             setAmount1("");
           }
         } else if (lastUpdatedField === "amount1") {
-          if (amount1Value.isGreaterThan(0) && price) {
-            const correspondingAmount0 = amount1Value.multipliedBy(price);
+          if (amount1Value.isGreaterThan(0) && currentPrice) {
+            const correspondingAmount0 = amount1Value.multipliedBy(currentPrice);
             setAmount0(correspondingAmount0.toString());
           } else {
             setAmount0("");
@@ -97,44 +124,25 @@ function AddLiquidityForm(props: any) {
       }
     }
     fetchData();
-  }, [
-    amount0,
-    amount1,
-    lastUpdatedField,
-    price,
-    inputTokenAddress,
-    outputTokenAddress,
-    inputTokenDecimals,
-    outputTokenDecimals,
-  ]);
+  }, [amount0, amount1, lastUpdatedField, price, currentPrice]);
 
-  // Get univ3 pool data
-  console.log();
-  const unipool = useUniswapPool(addr, tickLower, tickUpper, involvingETH, ethPrice);
-  console.log("unipool:", unipool);
   // Handles Inputs for tokens: Token A is derived from Token B
 
   const handleAmount0Change = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount0(e.target.value);
     setLastUpdatedField("amount0");
-    if (price && !isNaN(parseFloat(e.target.value))) {
-      setAmount1((parseFloat(e.target.value) / price).toString());
+    if (currentPrice && !isNaN(parseFloat(e.target.value))) {
+      setAmount1((parseFloat(e.target.value) / currentPrice).toString());
     }
   };
 
   const handleAmount1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount1(e.target.value);
     setLastUpdatedField("amount1");
-    if (price && !isNaN(parseFloat(e.target.value))) {
-      setAmount0((parseFloat(e.target.value) * price).toString());
+    if (currentPrice && !isNaN(parseFloat(e.target.value))) {
+      setAmount0((parseFloat(e.target.value) * currentPrice).toString());
     }
   };
-  // Get prices from uniswap
-
-  // Checks graph query result if user has a position else returns a string this happens when user has no position
-
-  const positionId = userPositions?.length > 0 ? userPositions[0].id : null;
-
   // Scaffold Contract Write takes contract and function + args (Touple) and should handle the transaction
 
   useEffect(() => {
@@ -183,7 +191,6 @@ function AddLiquidityForm(props: any) {
           amount1Min: parseAmount(amount1Min),
         },
       ];
-  console.log("args:", args);
 
   const { isLoading, writeAsync } = useScaffoldContractWrite(contractName, functionNameToCall, args);
 
@@ -210,6 +217,7 @@ function AddLiquidityForm(props: any) {
         <div> lpTokenAddress: {addr}</div>
         <div> Setup Index: {tempSlice.pid} </div>
         <div> Position ID: {positionId} </div>
+        <div> Current Price: {currentPrice} </div>
         <div>
           <FormControlLabel
             control={
@@ -307,7 +315,7 @@ function AddLiquidityForm(props: any) {
 
         <div>
           <div>Balance: {balance}</div>
-          <div>Price: {ethPrice}</div>
+          <div>Price: {eth}</div>
           <div>Error: {isError ? "true" : "false"}</div>
 
           <button onClick={onToggleBalance}>Toggle Balance Display</button>

@@ -69,6 +69,7 @@ export const useUniswapPool = (
               tickUpperUSDPrice,
               tickCurrentUSDPrice,
               formattedCursorNumber,
+              currentTickPrice,
             };
 
             setPoolData({ ...poolData, cursorData });

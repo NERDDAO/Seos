@@ -77,7 +77,6 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
   const { pid } = router.query;
   const contract = useScaffoldContractRead(contractName, functionName, [pid]);
   let data: any;
-  console.log("⚡️ ~ file: [pid].tsx:81 ~ contract", contract);
   if (contract.data) {
     data = contract.data as any[];
     data = {
@@ -92,7 +91,6 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
       tickLower: data[1].tickLower ? data[1].tickLower : "",
       tickUpper: data[1].tickUpper ? data[1].tickUpper : "",
     };
-    console.log("⚡️ ~ file: [pid].tsx:82 ~ data:", data);
   }
   const variableNames = {
     startBlock: "Start Block",
