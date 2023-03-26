@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 
 const VOID_ETHEREUM_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // Add this constant to handle ETH address
 
-const fetchEthereumPrice = async () => {
-  // Replace this with your logic to fetch ETH price
-  // You can use a price oracle or an API call
-  return 1753; // dummy value
-};
-
-export const useUniswapPool = (addr: string, tickLower: number, tickUpper: number, involvingETH: boolean) => {
+export const useUniswapPool = (
+  addr: string,
+  tickLower: number,
+  tickUpper: number,
+  involvingETH: boolean,
+  ethPrice: number,
+) => {
   const [poolData, setPoolData] = useState({});
   const fee = useScaffoldPoolRead(addr, "fee");
   const slot = useScaffoldPoolRead(addr, "slot0");
@@ -35,7 +35,6 @@ export const useUniswapPool = (addr: string, tickLower: number, tickUpper: numbe
             currentTickPrice,
           });
 
-          const ethPrice = await fetchEthereumPrice();
           const isToken0ETH = token0Address.data.toLowerCase() === VOID_ETHEREUM_ADDRESS.toLowerCase();
           const isToken1ETH = token1Address.data.toLowerCase() === VOID_ETHEREUM_ADDRESS.toLowerCase();
 

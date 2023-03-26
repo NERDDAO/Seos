@@ -10,7 +10,6 @@ import { UserPositions } from "~~/services/store/slices/querySlice";
 import { ethers } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
 import { useUniswapPool } from "~~/hooks/scaffold-eth";
-import { useScaffoldPoolRead } from "~~/hooks/scaffold-eth";
 
 function AddLiquidityForm(props: any) {
   const { lptokenAddress, tickLower, tickUpper, involvingETH } = props;
@@ -24,6 +23,7 @@ function AddLiquidityForm(props: any) {
   const [amount1Min, setAmount1Min] = useState("");
   const [percentageSetting, setPercentageSetting] = useState(";"); // default to 1%
   const [lastUpdatedField, setLastUpdatedField] = useState("");
+  const [ethPrice, setEthPrice] = useState(1);
 
   const [error, setError] = useState("");
 
@@ -39,8 +39,7 @@ function AddLiquidityForm(props: any) {
 
   const provider = useProvider();
   const addr = lptokenAddress;
-  const unipool = useUniswapPool(addr, tickLower, tickUpper, involvingETH);
-  console.log("unipool:", unipool);
+
   const lpTokenSymbol = "UniV3";
   const lpTokenDecimals = 18;
   const lpTokenBalance = "0";
@@ -61,26 +60,6 @@ function AddLiquidityForm(props: any) {
       handleExecuteQuery(account?.address);
     }
   }, [account?.address]);
-
-  // Handles Inputs for tokens: Token A is derived from Token B
-
-  const handleAmount0Change = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount0(e.target.value);
-    setLastUpdatedField("amount0");
-    if (price && !isNaN(parseFloat(e.target.value))) {
-      setAmount1((parseFloat(e.target.value) / price).toString());
-    }
-  };
-
-  const handleAmount1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount1(e.target.value);
-    setLastUpdatedField("amount1");
-    if (price && !isNaN(parseFloat(e.target.value))) {
-      setAmount0((parseFloat(e.target.value) * price).toString());
-    }
-  };
-  // Get prices from uniswap
-
   useEffect(() => {
     async function fetchData() {
       try {
@@ -93,6 +72,7 @@ function AddLiquidityForm(props: any) {
           outputTokenDecimals,
         );
         console.log(`The price of 1 WETH in DAI is: ${price}`);
+        setEthPrice(price);
 
         const amount0Value = new BigNumber(amount0);
         const amount1Value = new BigNumber(amount1);
@@ -128,6 +108,29 @@ function AddLiquidityForm(props: any) {
     outputTokenDecimals,
   ]);
 
+  // Get univ3 pool data
+  console.log();
+  const unipool = useUniswapPool(addr, tickLower, tickUpper, involvingETH, ethPrice);
+  console.log("unipool:", unipool);
+  // Handles Inputs for tokens: Token A is derived from Token B
+
+  const handleAmount0Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount0(e.target.value);
+    setLastUpdatedField("amount0");
+    if (price && !isNaN(parseFloat(e.target.value))) {
+      setAmount1((parseFloat(e.target.value) / price).toString());
+    }
+  };
+
+  const handleAmount1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount1(e.target.value);
+    setLastUpdatedField("amount1");
+    if (price && !isNaN(parseFloat(e.target.value))) {
+      setAmount0((parseFloat(e.target.value) * price).toString());
+    }
+  };
+  // Get prices from uniswap
+
   // Checks graph query result if user has a position else returns a string this happens when user has no position
 
   const positionId = userPositions?.length > 0 ? userPositions[0].id : null;
@@ -157,10 +160,10 @@ function AddLiquidityForm(props: any) {
   }, [amount0, amount1, percentageSetting]);
 
   const functionNameToCall = positionId ? "addLiquidity" : "openPosition";
-  console.log("functionNameToCall:", functionNameToCall);
 
   const args = positionId
     ? [
+        positionId,
         {
           setupIndex: tempSlice.pid,
           amount0: parseAmount(amount0),
@@ -172,8 +175,7 @@ function AddLiquidityForm(props: any) {
       ]
     : [
         {
-          // TODO : Use tempSlice.pid instead of hardcoding to 1, for some reason I was getting tempSlice.pid to be ""
-          setupIndex: "1",
+          setupIndex: tempSlice.pid,
           amount0: parseAmount(amount0),
           amount1: parseAmount(amount1),
           positionOwner: positionOwner || addressZero,
@@ -182,15 +184,13 @@ function AddLiquidityForm(props: any) {
         },
       ];
   console.log("args:", args);
-  console.log("tempSlice.pid:", tempSlice.pid);
-  console.log("seupIndex", args[0].setupIndex);
 
   const { isLoading, writeAsync } = useScaffoldContractWrite(contractName, functionNameToCall, args);
 
   const handleClick = async () => {
     if (!isLoading) {
       console.log("🚀 Constructed args of the tuple", {
-        setupIndex: "1",
+        setupIndex: tempSlice.pid,
         amount0: parseAmount(amount0),
         amount1: parseAmount(amount1),
         positionOwner: positionOwner || addressZero,
@@ -198,7 +198,6 @@ function AddLiquidityForm(props: any) {
         amount1Min: parseAmount(amount1Min),
       });
       await writeAsync();
-      console.log("writeAsync", writeAsync);
     }
   };
 
@@ -308,7 +307,7 @@ function AddLiquidityForm(props: any) {
 
         <div>
           <div>Balance: {balance}</div>
-          <div>Price: {price}</div>
+          <div>Price: {ethPrice}</div>
           <div>Error: {isError ? "true" : "false"}</div>
 
           <button onClick={onToggleBalance}>Toggle Balance Display</button>
