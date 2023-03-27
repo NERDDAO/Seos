@@ -10,7 +10,12 @@ import { UserPositions } from "~~/services/store/slices/querySlice";
 import { ethers } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
 
-const AddLiquidityForm = () => {
+interface AddLiquidityFormProps {
+  lpTokenAddress: string;
+  involvingEth: string | boolean;
+}
+
+const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, involvingEth }) => {
   const addressZero = ethers.constants.AddressZero;
   const [showPositionOwner, setShowPositionOwner] = useState(false);
   const { tempSlice } = useAppStore();
