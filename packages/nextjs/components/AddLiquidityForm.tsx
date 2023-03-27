@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
+import { useEthPrice, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { TextField, Button, Grid, Typography, FormControlLabel, Checkbox } from "@material-ui/core";
 import BigNumber from "bignumber.js";
-import { fetchPool } from "~~/utils/scaffold-eth/fetchPool";
 import { useAccount, useProvider } from "wagmi";
 import { useAccountBalance } from "~~/hooks/scaffold-eth/useAccountBalance";
 import { useAppStore } from "~~/services/store/store";
 import { UserPositions } from "~~/services/store/slices/querySlice";
 import { ethers } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
+import { useUniswapPool } from "~~/hooks/scaffold-eth";
 
-interface AddLiquidityFormProps {
-  lpTokenAddress: string;
-  involvingEth: string | boolean;
-}
-
-const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, involvingEth }) => {
+function AddLiquidityForm(props: any) {
+  const { lptokenAddress, tickLower, tickUpper, involvingETH } = props;
   const addressZero = ethers.constants.AddressZero;
   const [showPositionOwner, setShowPositionOwner] = useState(false);
   const { tempSlice } = useAppStore();
@@ -26,83 +22,98 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
   const [amount1Min, setAmount1Min] = useState("");
   const [percentageSetting, setPercentageSetting] = useState(";"); // default to 1%
   const [lastUpdatedField, setLastUpdatedField] = useState("");
+  const [ethPrice, setEthPrice] = useState(1);
+  const [currentPrice, setCurrentPrice] = useState(0);
 
   const [error, setError] = useState("");
 
   const contractName = "FarmMainRegularMinStake";
-  const functionName = "addLiquidity";
   const account = useAccount();
   const { balance, price, isError, onToggleBalance, isEthBalance } = useAccountBalance(account.address);
 
-  const inputTokenAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F"; // DAI token address
-  const outputTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH token address
-  const inputTokenDecimals = 18;
-  const outputTokenDecimals = 18;
-
   const provider = useProvider();
-
+  const addr = lptokenAddress;
   // Uses Graph Protocol to fetch existing indexed positions
-
+  const eth = useEthPrice();
+  console.log("eth:", eth);
   const { executeQuery } = useAppStore(state => state.querySlice);
   const [userPositions, setUserPositions] = useState<Array<UserPositions>>([]);
 
   const handleExecuteQuery = async (address: string) => {
     const result = await executeQuery(address);
-    console.log("result:", result);
     setUserPositions(result.user?.positions || []);
-    console.log("userPositions:", userPositions);
   };
 
   useEffect(() => {
-    console.log("handleExecuteQuery running with address:", account?.address);
     if (account?.address) {
       handleExecuteQuery(account?.address);
     }
   }, [account?.address]);
 
-  // Handles Inputs for tokens: Token A is derived from Token B
+  // Checks graph query result if user has a position else returns a string this happens when user has no position
 
-  const handleAmount0Change = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount0(e.target.value);
-    setLastUpdatedField("amount0");
-    if (price && !isNaN(parseFloat(e.target.value))) {
-      setAmount1((parseFloat(e.target.value) / price).toString());
-    }
-  };
+  const positionId = userPositions?.length > 0 ? userPositions[0].id : null;
 
-  const handleAmount1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount1(e.target.value);
-    setLastUpdatedField("amount1");
-    if (price && !isNaN(parseFloat(e.target.value))) {
-      setAmount0((parseFloat(e.target.value) * price).toString());
+  // Get univ3 pool data
+  const unipool = useUniswapPool(addr, tickLower, tickUpper, involvingETH, eth);
+  console.log("unipool:", unipool);
+  // Define an interface for the unipool object
+  interface UnipoolData {
+    cursorData: {
+      currentTickPrice: string;
+      formattedCursorNumber: number;
+      tickCurrentUSDPrice: number;
+      tickLowerUSDPrice: number;
+      tickUpperUSDPrice: number;
+    };
+  }
+
+  // Use a type assertion to cast unipool to the UnipoolData type
+  const unipoolData = unipool as UnipoolData;
+
+  // Destructure unipoolData to get each variable
+  try {
+    if (unipoolData.cursorData !== null) {
+      const {
+        cursorData,
+        cursorData: {
+          currentTickPrice,
+          formattedCursorNumber,
+          tickCurrentUSDPrice,
+          tickLowerUSDPrice,
+          tickUpperUSDPrice,
+        },
+      } = unipoolData;
+
+      // Get the current price of the pool
+      const price = parseFloat(currentTickPrice);
+      if (currentPrice == 0) {
+        setCurrentPrice(price);
+      } else {
+        console.log("currentPrice", currentPrice);
+      }
     }
-  };
-  // Get prices from uniswap
+  } catch (e) {
+    console.log("error:", e);
+  }
+
   useEffect(() => {
     async function fetchData() {
       try {
-        const price = await fetchPool(
-          provider,
-          inputTokenAddress,
-          outputTokenAddress,
-          inputTokenDecimals,
-          outputTokenDecimals,
-        );
-        console.log(`The price of 1 WETH in DAI is: ${price}`);
-
+        // Old logic
         const amount0Value = new BigNumber(amount0);
         const amount1Value = new BigNumber(amount1);
 
         if (lastUpdatedField === "amount0") {
-          if (amount0Value.isGreaterThan(0) && price) {
-            const correspondingAmount1 = amount0Value.dividedBy(price);
+          if (amount0Value.isGreaterThan(0) && currentPrice) {
+            const correspondingAmount1 = amount0Value.dividedBy(currentPrice);
             setAmount1(correspondingAmount1.toString());
           } else {
             setAmount1("");
           }
         } else if (lastUpdatedField === "amount1") {
-          if (amount1Value.isGreaterThan(0) && price) {
-            const correspondingAmount0 = amount1Value.multipliedBy(price);
+          if (amount1Value.isGreaterThan(0) && currentPrice) {
+            const correspondingAmount0 = amount1Value.multipliedBy(currentPrice);
             setAmount0(correspondingAmount0.toString());
           } else {
             setAmount0("");
@@ -113,21 +124,25 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
       }
     }
     fetchData();
-  }, [
-    amount0,
-    amount1,
-    lastUpdatedField,
-    price,
-    inputTokenAddress,
-    outputTokenAddress,
-    inputTokenDecimals,
-    outputTokenDecimals,
-  ]);
+  }, [amount0, amount1, lastUpdatedField, price, currentPrice]);
 
-  // Checks graph query result if user has a position else returns a string this happens when user has no position
+  // Handles Inputs for tokens: Token A is derived from Token B
 
-  const positionId = userPositions?.length > 0 ? userPositions[0].id : null;
+  const handleAmount0Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount0(e.target.value);
+    setLastUpdatedField("amount0");
+    if (currentPrice && !isNaN(parseFloat(e.target.value))) {
+      setAmount1((parseFloat(e.target.value) / currentPrice).toString());
+    }
+  };
 
+  const handleAmount1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount1(e.target.value);
+    setLastUpdatedField("amount1");
+    if (currentPrice && !isNaN(parseFloat(e.target.value))) {
+      setAmount0((parseFloat(e.target.value) * currentPrice).toString());
+    }
+  };
   // Scaffold Contract Write takes contract and function + args (Touple) and should handle the transaction
 
   useEffect(() => {
@@ -153,10 +168,10 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
   }, [amount0, amount1, percentageSetting]);
 
   const functionNameToCall = positionId ? "addLiquidity" : "openPosition";
-  console.log("functionNameToCall:", functionNameToCall);
 
   const args = positionId
     ? [
+        positionId,
         {
           setupIndex: tempSlice.pid,
           amount0: parseAmount(amount0),
@@ -168,8 +183,7 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
       ]
     : [
         {
-          // TODO : Use tempSlice.pid instead of hardcoding to 1, for some reason I was getting tempSlice.pid to be ""
-          setupIndex: "1",
+          setupIndex: tempSlice.pid,
           amount0: parseAmount(amount0),
           amount1: parseAmount(amount1),
           positionOwner: positionOwner || addressZero,
@@ -177,16 +191,13 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
           amount1Min: parseAmount(amount1Min),
         },
       ];
-  console.log("args:", args);
-  console.log("tempSlice.pid:", tempSlice.pid);
-  console.log("seupIndex", args[0].setupIndex);
 
   const { isLoading, writeAsync } = useScaffoldContractWrite(contractName, functionNameToCall, args);
 
   const handleClick = async () => {
     if (!isLoading) {
       console.log("🚀 Constructed args of the tuple", {
-        setupIndex: "1",
+        setupIndex: tempSlice.pid,
         amount0: parseAmount(amount0),
         amount1: parseAmount(amount1),
         positionOwner: positionOwner || addressZero,
@@ -194,7 +205,6 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
         amount1Min: parseAmount(amount1Min),
       });
       await writeAsync();
-      console.log("writeAsync", writeAsync);
     }
   };
 
@@ -204,8 +214,10 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
         Add Liquidity
       </Typography>
       <form>
+        <div> lpTokenAddress: {addr}</div>
         <div> Setup Index: {tempSlice.pid} </div>
         <div> Position ID: {positionId} </div>
+        <div> Current Price: {currentPrice} </div>
         <div>
           <FormControlLabel
             control={
@@ -303,7 +315,7 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
 
         <div>
           <div>Balance: {balance}</div>
-          <div>Price: {price}</div>
+          <div>Price: {eth}</div>
           <div>Error: {isError ? "true" : "false"}</div>
 
           <button onClick={onToggleBalance}>Toggle Balance Display</button>
@@ -312,6 +324,6 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ lpTokenAddress, inv
       </form>
     </Grid>
   );
-};
+}
 
 export default AddLiquidityForm;

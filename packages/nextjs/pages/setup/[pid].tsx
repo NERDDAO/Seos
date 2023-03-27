@@ -77,21 +77,20 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
   const { pid } = router.query;
   const contract = useScaffoldContractRead(contractName, functionName, [pid]);
   let data: any;
-  console.log("⚡️ ~ file: [pid].tsx:81 ~ contract", contract);
   if (contract.data) {
     data = contract.data as any[];
     data = {
       startBlock: data[0].startBlock ? epochToDateAndTime(data[0].startBlock.toString()) : "",
       rewardPerBlock: data[0].rewardPerBlock ? utils.formatEther(data[0].rewardPerBlock) : "",
       totalSupply: data[0].totalSupply ? utils.formatEther(data[0].totalSupply) : "",
-      //@dev
-      //handle boolean type there's  prob better way to do this
-      involvingEth: data[1].involvingETH == true ? "TRUE" : data[1].involvingETH == false ? "FALSE" : "undef",
+      //handle boolean type: there's  prob better way to do this
+      involvingEth: data[1].involvingETH == true ? true : data[1].involvingETH == false ? false : "undef",
       lpTokenAddress: data[1].liquidityPoolTokenAddress ? data[1].liquidityPoolTokenAddress : "",
       MainToken: data[1].mainTokenAddress ? data[1].mainTokenAddress : "",
       minStakeableAmount: data[1].minStakeable ? utils.formatEther(data[1].minStakeable) : "notfound",
+      tickLower: data[1].tickLower ? data[1].tickLower : "",
+      tickUpper: data[1].tickUpper ? data[1].tickUpper : "",
     };
-    console.log("⚡️ ~ file: [pid].tsx:82 ~ data:", data);
   }
   const variableNames = {
     startBlock: "Start Block",
@@ -103,10 +102,20 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
     minStakeableAmount: "Min Stakeable Amount",
   };
 
-  //TODO: Pass the data to the      <AddLiquidityForm />
+  const [lptokenAddress, setLptokenAddress] = useState("");
+  const [tickLower, setTickLower] = useState("0");
+  const [tickUpper, setTickUpper] = useState("0");
+  const [involvingETH, setInvolvingETH] = useState(false);
 
-  // lpTokenAddress: data[1].liquidityPoolTokenAddress ? data[1].liquidityPoolTokenAddress : "",
-  // involvinEth: data[1].involvingETH ? data[1].involvingETH : "notfound",
+  useEffect(() => {
+    if (data) {
+      setLptokenAddress(data.lpTokenAddress);
+      setTickLower(data.tickLower);
+      setTickUpper(data.tickUpper);
+      setInvolvingETH(data.involvingEth);
+    }
+  }, [data]);
+
   return (
     <Card className={classes.card}>
       <CardHeader className={classes.header} title="Data" />
@@ -137,7 +146,12 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
           {children}
         </Typography>
       </CardContent>
-      <AddLiquidityForm lpTokenAddress={data.lpTokenAddress} involvingEth={data.involvingEth} />
+      <AddLiquidityForm
+        lptokenAddress={lptokenAddress}
+        tickLower={tickLower}
+        tickUpper={tickUpper}
+        involvingETH={involvingETH}
+      />
     </Card>
   );
 };

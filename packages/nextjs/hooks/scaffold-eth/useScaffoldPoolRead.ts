@@ -1,6 +1,6 @@
 import { useContractRead } from "wagmi";
 import type { Abi } from "abitype";
-import { useDeployedContractInfo } from "./useDeployedContractInfo";
+import { useDeployedPoolInfo } from "./useDeployedPoolInfo";
 import { getTargetNetwork } from "~~/utils/scaffold-eth";
 import { BigNumber } from "ethers";
 
@@ -11,20 +11,20 @@ import { BigNumber } from "ethers";
  * @param args - args to be passed to the function call
  * @param readConfig - extra wagmi configuration
  */
-export const useScaffoldContractRead = <TReturn extends BigNumber | string | boolean | any[] = any>(
-  contractName: string,
+export const useScaffoldPoolRead = <TReturn extends BigNumber | string | boolean = any>(
+  contractAddress: string,
   functionName: string,
   args?: any[],
   readConfig?: Parameters<typeof useContractRead>[0],
 ) => {
   const configuredChain = getTargetNetwork();
-  const { data: deployedContractData } = useDeployedContractInfo(contractName);
+  const { data: deployedPoolData } = useDeployedPoolInfo(contractAddress);
 
   return useContractRead({
     chainId: configuredChain.id,
     functionName,
-    address: deployedContractData?.address,
-    abi: deployedContractData?.abi as Abi,
+    address: contractAddress,
+    abi: deployedPoolData?.abi as Abi,
     watch: true,
     args,
     ...readConfig,
