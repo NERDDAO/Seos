@@ -91,7 +91,6 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
       minStakeableAmount: data[1].minStakeable ? utils.formatEther(data[1].minStakeable) : "notfound",
       tickLower: data[1].tickLower ? data[1].tickLower : "",
       tickUpper: data[1].tickUpper ? data[1].tickUpper : "",
-      currentTick: data[1].currentTick ? data[1].currentTick : "",
     };
   }
   const variableNames = {

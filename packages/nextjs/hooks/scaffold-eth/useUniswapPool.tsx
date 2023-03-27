@@ -28,7 +28,11 @@ export const useUniswapPool = (
 
           const tickLowerPrice = tickToPrice(token0, token1, tickLower).toSignificant(15);
           const tickUpperPrice = tickToPrice(token1, token0, tickUpper).toSignificant(15);
-          const currentTickPrice = tickToPrice(token0, token1, parseInt(slot.data.tick)).toSignificant(15);
+          const currentTickPrice = tickToPrice(
+            token0,
+            token1,
+            parseInt(slot.data.tick ? slot.data.tick : slot.data[1]),
+          ).toSignificant(15);
 
           console.log("TICKDATA", {
             tickLowerPrice,
