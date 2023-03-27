@@ -79,6 +79,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
   let data: any;
   if (contract.data) {
     data = contract.data as any[];
+    console.log(contract.data);
     data = {
       startBlock: data[0].startBlock ? epochToDateAndTime(data[0].startBlock.toString()) : "",
       rewardPerBlock: data[0].rewardPerBlock ? utils.formatEther(data[0].rewardPerBlock) : "",
@@ -90,6 +91,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
       minStakeableAmount: data[1].minStakeable ? utils.formatEther(data[1].minStakeable) : "notfound",
       tickLower: data[1].tickLower ? data[1].tickLower : "",
       tickUpper: data[1].tickUpper ? data[1].tickUpper : "",
+      currentTick: data[1].currentTick ? data[1].currentTick : "",
     };
   }
   const variableNames = {
@@ -101,6 +103,8 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
     MainToken: "Main Token",
     minStakeableAmount: "Min Stakeable Amount",
   };
+
+  console.log("data", data);
 
   const [lptokenAddress, setLptokenAddress] = useState("");
   const [tickLower, setTickLower] = useState("0");
