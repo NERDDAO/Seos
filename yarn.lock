@@ -4952,6 +4952,7 @@ __metadata:
     "@types/react-copy-to-clipboard": ^5.0.4
     "@typescript-eslint/eslint-plugin": ^5.39.0
     "@uniswap/sdk": ^3.0.3
+    "@uniswap/v3-sdk": ^3.9.0
     autoprefixer: ^10.4.12
     bignumber.js: ^9.1.1
     daisyui: ^2.31.0
@@ -6388,7 +6389,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@uniswap/v3-sdk@npm:^3.6.3":
+"@uniswap/v3-sdk@npm:^3.6.3, @uniswap/v3-sdk@npm:^3.9.0":
   version: 3.9.0
   resolution: "@uniswap/v3-sdk@npm:3.9.0"
   dependencies:
