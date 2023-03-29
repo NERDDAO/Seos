@@ -17,7 +17,7 @@ type AllowanceItem = {
 };
 
 const useAllowance = ({ tokens, owner, spender, values, onApproval }: UseAllowanceProps) => {
-  const [allowances, setAllowances] = useState<AllowanceItem[]>([]);
+  const [allowance, setAllowances] = useState<AllowanceItem[]>([]);
   const allowance0 = useScaffoldERC20Read(tokens[0].address, "allowance", [owner, spender]);
   const allowance1 = useScaffoldERC20Read(tokens[1].address, "allowance", [owner, spender]);
 
@@ -30,45 +30,52 @@ const useAllowance = ({ tokens, owner, spender, values, onApproval }: UseAllowan
         approvedAmount: allowance,
       };
     });
+
+    const allowances = await Promise.all(allowancesPromises);
+    setAllowances(allowances);
   }, [tokens, owner, spender]);
 
-  // useEffect(() => {
-  //   fetchAllowances();
-  // }, [fetchAllowances]);
-  // const [approveLoading, setApproveLoading] = useState(false);
-  // const onTokenApproval = useCallback(
-  //   async (tokenAddress:string) => {
-  //     setApproveLoading(true);
-  //     try {
-  //       const token = tokens.find((t) => t.address === tokenAddress);
-  //       if (!token) {
-  //         throw new Error('Token not found');
-  //       }
+  useEffect(() => {
+    if (tokens.length > 0) {
+      fetchAllowances();
+    }
+  }, [tokens, owner, spender]);
 
-  //       const index = tokens.findIndex((t) => t.address === tokenAddress);
-  //       const tokenValue = values[index] === null ? BigNumber.from(2).pow(256).sub(1) : values[index];
-
-  //       useScaffoldERCWrite('approve', tokenAddress, [spender, tokenValue]);
-  //       onApproval();
-
-  //       // Update allowance for the approved token
-  //       setAllowances((prevState) =>
-  //         prevState.map((item) =>
-  //           item.token === tokenAddress
-  //             ? { ...item, approvedAmount: tokenValue }
-  //             : item
-  //         )
-  //       );
-  //     } catch (e) {
-  //       throw e;
-  //     } finally {
-  //       setApproveLoading(false);
-  //     }
-  //   },
-  //   [tokens, spender, values, onApproval]
-  // );
-
-  // return { approveLoading, onTokenApproval, allowances };
+  return { allowance, fetchAllowances };
 };
 
 export default useAllowance;
+// const [approveLoading, setApproveLoading] = useState(false);
+// const onTokenApproval = useCallback(
+//   async (tokenAddress:string) => {
+//     setApproveLoading(true);
+//     try {
+//       const token = tokens.find((t) => t.address === tokenAddress);
+//       if (!token) {
+//         throw new Error('Token not found');
+//       }
+
+//       const index = tokens.findIndex((t) => t.address === tokenAddress);
+//       const tokenValue = values[index] === null ? BigNumber.from(2).pow(256).sub(1) : values[index];
+
+//       useScaffoldERCWrite('approve', tokenAddress, [spender, tokenValue]);
+//       onApproval();
+
+//       // Update allowance for the approved token
+//       setAllowances((prevState) =>
+//         prevState.map((item) =>
+//           item.token === tokenAddress
+//             ? { ...item, approvedAmount: tokenValue }
+//             : item
+//         )
+//       );
+//     } catch (e) {
+//       throw e;
+//     } finally {
+//       setApproveLoading(false);
+//     }
+//   },
+//   [tokens, spender, values, onApproval]
+// );
+
+// return { approveLoading, onTokenApproval, allowances };
