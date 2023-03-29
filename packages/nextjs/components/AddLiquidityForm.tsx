@@ -167,6 +167,10 @@ function AddLiquidityForm(props: any) {
     calculateMinAmounts();
   }, [amount0, amount1, percentageSetting]);
 
+  // Use allowance checker
+
+  //...if not approved, show approve button... handle approve
+
   const functionNameToCall = positionId ? "addLiquidity" : "openPosition";
 
   const args = positionId
