@@ -106,14 +106,14 @@ function AddLiquidityForm(props: any) {
 
         if (lastUpdatedField === "amount0") {
           if (amount0Value.isGreaterThan(0) && currentPrice) {
-            const correspondingAmount1 = amount0Value.dividedBy(currentPrice);
+            const correspondingAmount1 = amount0Value.multipliedBy(currentPrice);
             setAmount1(correspondingAmount1.toString());
           } else {
             setAmount1("");
           }
         } else if (lastUpdatedField === "amount1") {
           if (amount1Value.isGreaterThan(0) && currentPrice) {
-            const correspondingAmount0 = amount1Value.multipliedBy(currentPrice);
+            const correspondingAmount0 = amount1Value.dividedBy(currentPrice);
             setAmount0(correspondingAmount0.toString());
           } else {
             setAmount0("");
