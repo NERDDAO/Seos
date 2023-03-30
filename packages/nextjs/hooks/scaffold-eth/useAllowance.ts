@@ -1,45 +1,57 @@
 import { useState, useCallback, useEffect } from "react";
 import { useScaffoldERCWrite } from "./useScaffoldERCWrite";
 import { useScaffoldERC20Read } from "./useScaffoldERC20Read";
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 type UseAllowanceProps = {
-  tokens: { address: string; value: number }[];
+  tokens: { address: string; value: number; approved: boolean }[];
   owner: string;
   spender: string;
+  onAllowanceFetched: (
+    updatedTokens: { address: string; value: number; allowance: number; approved: boolean }[],
+  ) => void;
 };
 
 type AllowanceItem = {
-  token: string;
-  approvedAmount: any;
+  address: string;
+  allowance: any;
+  value: number;
+  approved: boolean;
 };
 
-const useAllowance = ({ tokens, owner, spender }: UseAllowanceProps) => {
+const useAllowance = ({ tokens, owner, spender, onAllowanceFetched }: UseAllowanceProps) => {
   const [allowance, setAllowances] = useState<AllowanceItem[]>([]);
-  const allowance0 = useScaffoldERC20Read(tokens[0].address, "allowance", [tokens[0].value, spender]);
-  const allowance1 = useScaffoldERC20Read(tokens[1].address, "allowance", [tokens[1].value, spender]);
+  const allowance0 = useScaffoldERC20Read(tokens[0].address, "allowance", [owner, spender]);
+  const allowance1 = useScaffoldERC20Read(tokens[1].address, "allowance", [owner, spender]);
+
+  //console log token0 address, token1 address, spender and tokn values
+  console.log("Allowance Inputs", { tokens, spender, allowance0, allowance1 });
 
   const fetchAllowances = useCallback(async () => {
     const allowancesPromises = tokens.map(async token => {
-      // map tokens to their allowances that are declared earlier (Allowance0 and Allowance1)
-      const allowance = token.address === tokens[0].address ? allowance0 : allowance1;
+      const allowance = token.address === tokens[0].address ? allowance0.data : allowance1.data;
+      const tokenValueInWei = ethers.utils.parseUnits(token.value.toString(), 18);
       return {
-        token: token.address,
-        approvedAmount: allowance,
+        address: token.address, // Change 'token' to 'address'
+        value: token.value,
+        allowance: allowance.toNumber(), // Change 'approvedAmount' to 'allowance' and convert BigNumber to number
+        approved: allowance.gte(tokenValueInWei), // Change 'approved' type from 'any' to 'boolean'
       };
     });
 
     const allowances = await Promise.all(allowancesPromises);
+    const updatedTokens = allowances; // No need to map tokens again since we already added the 'approved' property in the first step
+
+    onAllowanceFetched(updatedTokens);
     setAllowances(allowances);
   }, [tokens, owner, spender]);
 
   useEffect(() => {
-    if (tokens.length > 0) {
-      fetchAllowances();
-    }
-  }, [tokens, owner, spender]);
+    fetchAllowances();
+  }, [JSON.stringify(tokens.map(token => token.value)), owner, spender]);
 
-  return { allowance, fetchAllowances };
+  console.log("Allowance Outputs", { allowance });
+  return { allowance };
 };
 
 export default useAllowance;
