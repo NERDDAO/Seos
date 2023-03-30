@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useEthPrice, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { TextField, Button, Grid, Typography, FormControlLabel, Checkbox } from "@material-ui/core";
 import BigNumber from "bignumber.js";
@@ -24,18 +24,19 @@ function AddLiquidityForm(props: any) {
   const [amount1Min, setAmount1Min] = useState("");
   const [percentageSetting, setPercentageSetting] = useState(";"); // default to 1%
   const [lastUpdatedField, setLastUpdatedField] = useState("");
-  const [ethPrice, setEthPrice] = useState(1);
   const [currentPrice, setCurrentPrice] = useState(0);
   // create e const for the array of token addresses, that will also contain the input value and approval state
   const [tokenAddresses, setTokenAddresses] = useState([
-    { address: "", value: 0, approved: false },
-    { address: "", value: 0, approved: false },
+    { address: "", value: 0, allowance: 0, approved: false },
+    { address: "", value: 0, allowance: 0, approved: false },
   ]);
 
   const [error, setError] = useState("");
 
   const contractName = "FarmMainRegularMinStake";
   const account = useAccount();
+  const address = account?.address;
+
   const { balance, price, isError, onToggleBalance, isEthBalance } = useAccountBalance(account.address);
 
   const provider = useProvider();
@@ -105,8 +106,8 @@ function AddLiquidityForm(props: any) {
       // Set the token addresses to the state using token0Address and token1Address
       if (tokenAddresses[0].address === "") {
         setTokenAddresses([
-          { address: token0Address, value: 0, approved: false },
-          { address: token1Address, value: 0, approved: false },
+          { address: token0Address, value: 0, allowance: 0, approved: false },
+          { address: token1Address, value: 0, allowance: 0, approved: false },
         ]);
       }
 
@@ -208,8 +209,24 @@ function AddLiquidityForm(props: any) {
       });
     }
   }, [amount0, amount1, tokenAddresses]);
-  //...if not approved, show approve button... handle approve
-  console.log("tokenAddresses:", tokenAddresses);
+  //... use tokenAddresses to check if approved and update the staet of the token addresses
+
+  const updateTokenAllowances = useCallback((updatedTokens: any) => {
+    setTokenAddresses(updatedTokens);
+  }, []);
+
+  const { allowance } = useAllowance({
+    tokens: tokenAddresses,
+    owner: address ? address : "",
+    spender: contractAddress ? contractAddress : "",
+    onAllowanceFetched: updateTokenAllowances,
+  });
+
+  console.log("allowance", tokenAddresses);
+
+  //...if approved, show add liquidity button...
+
+  //handle add liquidity
   const functionNameToCall = positionId ? "addLiquidity" : "openPosition";
 
   const args = positionId
