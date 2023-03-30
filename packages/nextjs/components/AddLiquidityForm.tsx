@@ -222,7 +222,7 @@ function AddLiquidityForm(props: any) {
     onAllowanceFetched: updateTokenAllowances,
   });
 
-  console.log("allowance", allowance);
+  console.log("allowance", tokenAddresses);
 
   //...if approved, show add liquidity button...
 

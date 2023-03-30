@@ -34,7 +34,7 @@ const useAllowance = ({ tokens, owner, spender, onAllowanceFetched }: UseAllowan
       return {
         address: token.address, // Change 'token' to 'address'
         value: token.value,
-        allowance: allowance.toNumber(), // Change 'approvedAmount' to 'allowance' and convert BigNumber to number
+        allowance: allowance ? allowance.toNumber() : "", // Change 'approvedAmount' to 'allowance' and convert BigNumber to number
         approved: allowance.gte(tokenValueInWei), // Change 'approved' type from 'any' to 'boolean'
       };
     });
@@ -55,6 +55,7 @@ const useAllowance = ({ tokens, owner, spender, onAllowanceFetched }: UseAllowan
 };
 
 export default useAllowance;
+
 // const [approveLoading, setApproveLoading] = useState(false);
 // const onTokenApproval = useCallback(
 //   async (tokenAddress:string) => {
