@@ -4,7 +4,7 @@ import { useScaffoldERC20Read } from "./useScaffoldERC20Read";
 import { BigNumber } from "ethers";
 
 type UseAllowanceProps = {
-  tokens: { address: string; contract: any; value: number }[];
+  tokens: { address: string; value: number }[];
   owner: string;
   spender: string;
 };
