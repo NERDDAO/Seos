@@ -6,7 +6,7 @@ import { useAccount, useProvider } from "wagmi";
 import { useAccountBalance } from "~~/hooks/scaffold-eth/useAccountBalance";
 import { useAppStore } from "~~/services/store/store";
 import { UserPositions } from "~~/services/store/slices/querySlice";
-import { ethers } from "ethers";
+import { ethers, Signer } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
 import { useUniswapPool } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
@@ -32,7 +32,7 @@ function AddLiquidityForm(props: any) {
   ]);
 
   const [error, setError] = useState("");
-
+  const [approveLoading, setApproveLoading] = useState(false);
   const contractName = "FarmMainRegularMinStake";
   const account = useAccount();
   const address = account?.address;
@@ -256,15 +256,63 @@ function AddLiquidityForm(props: any) {
 
   const handleClick = async () => {
     if (!isLoading) {
-      console.log("🚀 Constructed args of the tuple", {
-        setupIndex: tempSlice.pid,
-        amount0: parseAmount(amount0),
-        amount1: parseAmount(amount1),
-        positionOwner: positionOwner || addressZero,
-        amount0Min: parseAmount(amount0Min),
-        amount1Min: parseAmount(amount1Min),
-      });
-      await writeAsync();
+      const approved = tokenAddresses.every(token => token.approved);
+      if (approved) {
+        console.log("🚀 Constructed args of the tuple", {
+          setupIndex: tempSlice.pid,
+          amount0: parseAmount(amount0),
+          amount1: parseAmount(amount1),
+          positionOwner: positionOwner || addressZero,
+          amount0Min: parseAmount(amount0Min),
+          amount1Min: parseAmount(amount1Min),
+        });
+        await writeAsync();
+      } else {
+        setError("Please approve both tokens before adding liquidity.");
+      }
+    }
+  };
+
+  const onTokenApproval = async (tokenAddress: string) => {
+    try {
+      setApproveLoading(true);
+      setError("");
+
+      if (!window.ethereum) {
+        throw new Error("Ethereum provider not found");
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum as ethers.providers.ExternalProvider);
+
+      let resolvedTokenAddress: string | null = tokenAddress;
+
+      if (!ethers.utils.isAddress(tokenAddress)) {
+        resolvedTokenAddress = await provider.resolveName(tokenAddress);
+
+        if (!resolvedTokenAddress) {
+          resolvedTokenAddress = tokenAddress;
+        }
+      }
+
+      const signer = provider.getSigner();
+
+      const contract = new ethers.Contract(
+        resolvedTokenAddress,
+        ["function approve(address _spender, uint256 _value) public returns (bool success)"],
+        signer,
+      );
+
+      const approveTx = await contract.approve(contractAddress, ethers.constants.MaxUint256);
+      await approveTx.wait();
+
+      setTokenAddresses(prev =>
+        prev.map(token => (token.address === resolvedTokenAddress ? { ...token, approved: true } : token)),
+      );
+    } catch (e) {
+      console.error("Error approving token:", e);
+      setError("Error approving token. Please try again.");
+    } finally {
+      setApproveLoading(false);
     }
   };
 
@@ -361,6 +409,21 @@ function AddLiquidityForm(props: any) {
           disabled
         />
         {error && <Typography color="error">{error}</Typography>}
+
+        {tokenAddresses.map((token, index) => (
+          <Button
+            key={token.address}
+            type="button"
+            variant="contained"
+            color="primary"
+            style={{ marginTop: "20px", marginRight: "5px" }}
+            onClick={() => onTokenApproval(token.address)}
+            disabled={approveLoading || token.approved}
+          >
+            {approveLoading ? "Approving..." : token.approved ? "Approved" : "Approve Token"}
+          </Button>
+        ))}
+
         <Button
           type="button"
           variant="contained"
