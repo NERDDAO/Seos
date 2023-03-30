@@ -35,7 +35,7 @@ const useAllowance = ({ tokens, owner, spender, onAllowanceFetched }: UseAllowan
         address: token.address, // Change 'token' to 'address'
         value: token.value,
         allowance: allowance ? allowance.toNumber() : "", // Change 'approvedAmount' to 'allowance' and convert BigNumber to number
-        approved: allowance.gte(tokenValueInWei), // Change 'approved' type from 'any' to 'boolean'
+        approved: allowance ? allowance.gte(tokenValueInWei) : false, // Change 'approved' type from 'any' to 'boolean'
       };
     });
 
