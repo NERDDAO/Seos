@@ -9,9 +9,11 @@ import { UserPositions } from "~~/services/store/slices/querySlice";
 import { ethers } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
 import { useUniswapPool } from "~~/hooks/scaffold-eth";
+import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
+import useAllowance from "~~/hooks/scaffold-eth/useAllowance";
 
 function AddLiquidityForm(props: any) {
-  const { lptokenAddress, tickLower, tickUpper, involvingETH } = props;
+  const { lptokenAddress, tickLower, tickUpper, involvingETH, mainTokenAddress } = props;
   const addressZero = ethers.constants.AddressZero;
   const [showPositionOwner, setShowPositionOwner] = useState(false);
   const { tempSlice } = useAppStore();
@@ -24,6 +26,11 @@ function AddLiquidityForm(props: any) {
   const [lastUpdatedField, setLastUpdatedField] = useState("");
   const [ethPrice, setEthPrice] = useState(1);
   const [currentPrice, setCurrentPrice] = useState(0);
+  // create e const for the array of token addresses, that will also contain the input value and approval state
+  const [tokenAddresses, setTokenAddresses] = useState([
+    { address: "", value: 0, approved: false },
+    { address: "", value: 0, approved: false },
+  ]);
 
   const [error, setError] = useState("");
 
@@ -35,7 +42,6 @@ function AddLiquidityForm(props: any) {
   const addr = lptokenAddress;
   // Uses Graph Protocol to fetch existing indexed positions
   const eth = useEthPrice();
-  console.log("eth:", eth);
   const { executeQuery } = useAppStore(state => state.querySlice);
   const [userPositions, setUserPositions] = useState<Array<UserPositions>>([]);
 
@@ -43,6 +49,10 @@ function AddLiquidityForm(props: any) {
     const result = await executeQuery(address);
     setUserPositions(result.user?.positions || []);
   };
+  //get contract address from deployedContractInfo
+  const deployedContractInfo = useDeployedContractInfo(contractName);
+  const contractAddress = deployedContractInfo.data?.address;
+  console.log("contractAddress:", contractAddress);
 
   useEffect(() => {
     if (account?.address) {
@@ -65,6 +75,8 @@ function AddLiquidityForm(props: any) {
       tickCurrentUSDPrice: number;
       tickLowerUSDPrice: number;
       tickUpperUSDPrice: number;
+      token0Address: string;
+      token1Address: string;
     };
   }
 
@@ -82,11 +94,24 @@ function AddLiquidityForm(props: any) {
           tickCurrentUSDPrice,
           tickLowerUSDPrice,
           tickUpperUSDPrice,
+          token0Address,
+          token1Address,
         },
       } = unipoolData;
 
       // Get the current price of the pool
       const price = parseFloat(currentTickPrice);
+
+      // Set the token addresses to the state using token0Address and token1Address
+      if (tokenAddresses[0].address === "") {
+        setTokenAddresses([
+          { address: token0Address, value: 0, approved: false },
+          { address: token1Address, value: 0, approved: false },
+        ]);
+      }
+
+      // Set the current price to the state
+
       if (currentPrice == 0) {
         setCurrentPrice(price);
       } else {
@@ -167,10 +192,24 @@ function AddLiquidityForm(props: any) {
     calculateMinAmounts();
   }, [amount0, amount1, percentageSetting]);
 
-  // Use allowance checker
-
+  // update the existing token info state with token 0 and token 1 with amount0 and amount1 input values avoid infinite loops
+  useEffect(() => {
+    if (amount0 && amount1) {
+      setTokenAddresses(prev => {
+        // Check if the amounts have changed before updating the state
+        if (prev[0].value !== Number(amount0) || prev[1].value !== Number(amount1)) {
+          const firstToken = { ...prev[0], value: Number(amount0) };
+          const secondToken = { ...prev[1], value: Number(amount1) };
+          return [firstToken, secondToken];
+        } else {
+          // If the amounts have not changed, return the previous state
+          return prev;
+        }
+      });
+    }
+  }, [amount0, amount1, tokenAddresses]);
   //...if not approved, show approve button... handle approve
-
+  console.log("tokenAddresses:", tokenAddresses);
   const functionNameToCall = positionId ? "addLiquidity" : "openPosition";
 
   const args = positionId

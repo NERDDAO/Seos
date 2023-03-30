@@ -75,6 +75,8 @@ export const useUniswapPool = (
               tickCurrentUSDPrice,
               formattedCursorNumber,
               currentTickPrice,
+              token0Address: token0Address.data,
+              token1Address: token1Address.data,
             };
 
             setPoolData({ ...poolData, cursorData });

@@ -109,6 +109,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
   const [tickLower, setTickLower] = useState("0");
   const [tickUpper, setTickUpper] = useState("0");
   const [involvingETH, setInvolvingETH] = useState(false);
+  const [mainTokenAddress, setMainTokenAddress] = useState("");
 
   useEffect(() => {
     if (data) {
@@ -116,6 +117,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
       setTickLower(data.tickLower);
       setTickUpper(data.tickUpper);
       setInvolvingETH(data.involvingEth);
+      setMainTokenAddress(data.MainToken);
     }
   }, [data]);
 
@@ -154,6 +156,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
         tickLower={tickLower}
         tickUpper={tickUpper}
         involvingETH={involvingETH}
+        mainTokenAddress={mainTokenAddress}
       />
     </Card>
   );

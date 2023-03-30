@@ -16,3 +16,4 @@ export * from "./useTransactor";
 export * from "./useScaffoldPoolRead";
 export * from "./useUniswapPool";
 export * from "./useScaffoldERC20Read";
+export * from "./useAllowance";
