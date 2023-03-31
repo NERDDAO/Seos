@@ -233,7 +233,7 @@ function AddLiquidityForm(props: any) {
 
   console.log("tokenIndex", tokenIndex);
 
-  console.log("allowance", tokenAddresses[tokenIndex].address);
+  console.log("allowance", tokenAddresses);
 
   //...if approved, show add liquidity button...
 
@@ -278,22 +278,28 @@ function AddLiquidityForm(props: any) {
       await writeAsync();
     }
   };
-  console.log("LOOKATME", tokenAddresses[tokenIndex]?.address ? tokenAddresses[tokenIndex].address : "");
-  const { isLoading: isApproving, writeAsync: approveAsync } = useScaffoldERCWrite(
-    tokenAddresses[tokenIndex]?.address ? tokenAddresses[tokenIndex].address : "",
-    "approve",
-    [contractAddress, tokenAddresses[tokenIndex].value],
-  );
+
+  const approvalAddress = tokenAddresses[tokenIndex]?.address ? tokenAddresses[tokenIndex].address : "0x";
+  const approvalAmount = tokenAddresses[tokenIndex].value
+    ? ethers.utils.parseUnits(
+        tokenAddresses[tokenIndex].value.toString(),
+        18, // change to tokenDecimals if needed
+      )
+    : parseAmount("0");
+
+  console.log(approvalAmount);
+  console.log("approvalAddress", approvalAddress);
+  const { isLoading: isApproving, writeAsync: approveAsync } = useScaffoldERCWrite(approvalAddress, "approve", [
+    contractAddress,
+    // 5000 in wei
+    approvalAmount,
+  ]);
 
   const handleTokenApproval = async () => {
     if (!isApproving) await approveAsync();
     // Add any additional logic after token approval if needed
   };
-  console.log("🚀 Constructed args of the Approve tuple", [
-    contractAddress,
-    tokenAddresses[tokenIndex]?.address,
-    tokenAddresses[tokenIndex].value,
-  ]);
+
   return (
     <Grid container direction="column" alignItems="center">
       <Typography variant="h6" style={{ marginTop: "20px" }}>
