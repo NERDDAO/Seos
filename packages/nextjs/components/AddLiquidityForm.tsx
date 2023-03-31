@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useEthPrice, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { TextField, Button, Grid, Typography, FormControlLabel, Checkbox } from "@material-ui/core";
 import BigNumber from "bignumber.js";
@@ -10,6 +10,7 @@ import { ethers } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
 import { useUniswapPool } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
+import { useScaffoldERCWrite } from "~~/hooks/scaffold-eth/useScaffoldERCWrite";
 import useAllowance from "~~/hooks/scaffold-eth/useAllowance";
 
 function AddLiquidityForm(props: any) {
@@ -126,7 +127,6 @@ function AddLiquidityForm(props: any) {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Old logic
         const amount0Value = new BigNumber(amount0);
         const amount1Value = new BigNumber(amount1);
 
@@ -222,7 +222,18 @@ function AddLiquidityForm(props: any) {
     onAllowanceFetched: updateTokenAllowances,
   });
 
-  console.log("allowance", tokenAddresses);
+  const isApproved = useMemo(() => {
+    return tokenAddresses.every(token => token.approved);
+  }, [tokenAddresses]);
+
+  // determine which token index (approved = false)
+  const tokenIndex = useMemo(() => {
+    return tokenAddresses.findIndex(token => !token.approved);
+  }, [tokenAddresses]);
+
+  console.log("tokenIndex", tokenIndex);
+
+  console.log("allowance", tokenAddresses[tokenIndex].address);
 
   //...if approved, show add liquidity button...
 
@@ -267,7 +278,22 @@ function AddLiquidityForm(props: any) {
       await writeAsync();
     }
   };
+  console.log("LOOKATME", tokenAddresses[tokenIndex]?.address ? tokenAddresses[tokenIndex].address : "");
+  const { isLoading: isApproving, writeAsync: approveAsync } = useScaffoldERCWrite(
+    tokenAddresses[tokenIndex]?.address ? tokenAddresses[tokenIndex].address : "",
+    "approve",
+    [contractAddress, tokenAddresses[tokenIndex].value],
+  );
 
+  const handleTokenApproval = async () => {
+    if (!isApproving) await approveAsync();
+    // Add any additional logic after token approval if needed
+  };
+  console.log("🚀 Constructed args of the Approve tuple", [
+    contractAddress,
+    tokenAddresses[tokenIndex]?.address,
+    tokenAddresses[tokenIndex].value,
+  ]);
   return (
     <Grid container direction="column" alignItems="center">
       <Typography variant="h6" style={{ marginTop: "20px" }}>
@@ -360,19 +386,14 @@ function AddLiquidityForm(props: any) {
           style={{ margin: "20px 0" }}
           disabled
         />
-        {error && <Typography color="error">{error}</Typography>}
-        <Button
-          type="button"
-          variant="contained"
-          color="primary"
-          style={{ marginTop: "20px" }}
-          onClick={() => {
-            handleClick();
-          }}
-        >
-          Add Liquidity
-        </Button>
-
+        <div>
+          <Button variant="contained" color="primary" onClick={handleClick} disabled={isLoading || !isApproved}>
+            {isLoading ? "Loading..." : "Add Liquidity"}
+          </Button>
+          <Button variant="contained" color="primary" onClick={handleTokenApproval} disabled={isLoading || isApproved}>
+            {isLoading ? "Loading..." : "Approve Tokens"}
+          </Button>
+        </div>
         <div>
           <div>Balance: {balance}</div>
           <div>Price: {eth}</div>

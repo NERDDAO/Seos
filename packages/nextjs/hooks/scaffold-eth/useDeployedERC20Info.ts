@@ -15,7 +15,7 @@ type GeneratedContractType = {
 export const useDeployedERC20Info = (contractAddress: string | undefined | null) => {
   const configuredChain = getTargetNetwork();
   const contractName = "Erc20";
-  const [deployedPoolData, setDeployedPoolData] = useState<undefined | GeneratedContractType>(undefined);
+  const [deployedERC20Data, setDeployedERC20Data] = useState<undefined | GeneratedContractType>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const provider = useProvider({ chainId: configuredChain.id });
 
@@ -41,10 +41,10 @@ export const useDeployedERC20Info = (contractAddress: string | undefined | null)
         if (code === "0x" || !contractsData || !(contractName in contractsData)) {
           return;
         }
-        setDeployedPoolData(contractsData[contractName]);
+        setDeployedERC20Data(contractsData[contractName]);
       } catch (e) {
         // Contract not deployed or file doesn't exist.
-        setDeployedPoolData(undefined);
+        setDeployedERC20Data(undefined);
       } finally {
         setIsLoading(false);
       }
@@ -53,5 +53,5 @@ export const useDeployedERC20Info = (contractAddress: string | undefined | null)
     getDeployedContractInfo();
   }, [configuredChain.id, contractName, provider]);
 
-  return { data: deployedPoolData, isLoading };
+  return { data: deployedERC20Data, isLoading };
 };
