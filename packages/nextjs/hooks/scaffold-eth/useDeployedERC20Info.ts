@@ -51,7 +51,7 @@ export const useDeployedERC20Info = (contractAddress: string | undefined | null)
     };
 
     getDeployedContractInfo();
-  }, [configuredChain.id, contractName, provider]);
+  }, [configuredChain.id, contractName, provider, contractAddress]);
 
   return { data: deployedERC20Data, isLoading };
 };
