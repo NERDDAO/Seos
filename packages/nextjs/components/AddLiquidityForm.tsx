@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useEthPrice, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { TextField, Button, Grid, Typography, FormControlLabel, Checkbox } from "@material-ui/core";
-import BigNumber from "bignumber.js";
 import { useAccount, useProvider } from "wagmi";
 import { useAccountBalance } from "~~/hooks/scaffold-eth/useAccountBalance";
 import { useAppStore } from "~~/services/store/store";
 import { UserPositions } from "~~/services/store/slices/querySlice";
-import { ethers } from "ethers";
+import { ethers, BigNumber } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
 import { useUniswapPool } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
@@ -26,21 +25,18 @@ function AddLiquidityForm(props: any) {
   const [percentageSetting, setPercentageSetting] = useState(";"); // default to 1%
   const [lastUpdatedField, setLastUpdatedField] = useState("");
   const [currentPrice, setCurrentPrice] = useState(0);
+  // set state for bignumber
+  const [approvalAmount, setApprovalAmount] = useState<BigNumber>(BigNumber.from(0));
+  const [approvalAddress, setApprovalAddress] = useState("");
   // create e const for the array of token addresses, that will also contain the input value and approval state
   const [tokenAddresses, setTokenAddresses] = useState([
     { address: "", value: 0, allowance: 0, approved: false },
     { address: "", value: 0, allowance: 0, approved: false },
   ]);
-
-  const [error, setError] = useState("");
-
   const contractName = "FarmMainRegularMinStake";
   const account = useAccount();
   const address = account?.address;
-
   const { balance, price, isError, onToggleBalance, isEthBalance } = useAccountBalance(account.address);
-
-  const provider = useProvider();
   const addr = lptokenAddress;
   // Uses Graph Protocol to fetch existing indexed positions
   const eth = useEthPrice();
@@ -124,41 +120,13 @@ function AddLiquidityForm(props: any) {
     console.log("error:", e);
   }
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const amount0Value = new BigNumber(amount0);
-        const amount1Value = new BigNumber(amount1);
-
-        if (lastUpdatedField === "amount0") {
-          if (amount0Value.isGreaterThan(0) && currentPrice) {
-            const correspondingAmount1 = amount0Value.multipliedBy(currentPrice);
-            setAmount1(correspondingAmount1.toString());
-          } else {
-            setAmount1("");
-          }
-        } else if (lastUpdatedField === "amount1") {
-          if (amount1Value.isGreaterThan(0) && currentPrice) {
-            const correspondingAmount0 = amount1Value.dividedBy(currentPrice);
-            setAmount0(correspondingAmount0.toString());
-          } else {
-            setAmount0("");
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    fetchData();
-  }, [amount0, amount1, lastUpdatedField, price, currentPrice]);
-
   // Handles Inputs for tokens: Token A is derived from Token B
 
   const handleAmount0Change = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount0(e.target.value);
     setLastUpdatedField("amount0");
     if (currentPrice && !isNaN(parseFloat(e.target.value))) {
-      setAmount1((parseFloat(e.target.value) / currentPrice).toString());
+      setAmount1((parseFloat(e.target.value) * currentPrice).toString());
     }
   };
 
@@ -166,7 +134,7 @@ function AddLiquidityForm(props: any) {
     setAmount1(e.target.value);
     setLastUpdatedField("amount1");
     if (currentPrice && !isNaN(parseFloat(e.target.value))) {
-      setAmount0((parseFloat(e.target.value) * currentPrice).toString());
+      setAmount0((parseFloat(e.target.value) / currentPrice).toString());
     }
   };
   // Scaffold Contract Write takes contract and function + args (Touple) and should handle the transaction
@@ -222,11 +190,14 @@ function AddLiquidityForm(props: any) {
     onAllowanceFetched: updateTokenAllowances,
   });
 
+  console.log("allowance", allowance);
+
   const isApproved = useMemo(() => {
     return tokenAddresses.every(token => token.approved);
   }, [tokenAddresses]);
 
   // determine which token index (approved = false)
+
   const tokenIndex = useMemo(() => {
     return tokenAddresses.findIndex(token => !token.approved);
   }, [tokenAddresses]);
@@ -279,16 +250,24 @@ function AddLiquidityForm(props: any) {
     }
   };
 
-  const approvalAddress = tokenAddresses[tokenIndex]?.address ? tokenAddresses[tokenIndex].address : "0x";
-  const approvalAmount = tokenAddresses[tokenIndex].value
-    ? ethers.utils.parseUnits(
-        tokenAddresses[tokenIndex].value.toString(),
-        18, // change to tokenDecimals if needed
-      )
-    : parseAmount("0");
+  useEffect(() => {
+    if (tokenIndex !== -1) {
+      const approvalAddress = tokenAddresses[tokenIndex]?.address ? tokenAddresses[tokenIndex].address : "0x";
+      const approvalAmount = tokenAddresses[tokenIndex].value
+        ? ethers.utils.parseUnits(
+            tokenAddresses[tokenIndex].value.toString(),
+            18, // change to tokenDecimals if needed
+          )
+        : ethers.utils.parseUnits("0", 18);
+      setApprovalAmount(approvalAmount);
+      setApprovalAddress(approvalAddress);
+    } else {
+      const approvalAddress = "0x";
+      setApprovalAmount(ethers.utils.parseUnits("0", 18));
+      setApprovalAddress(approvalAddress);
+    }
+  }, [tokenIndex, tokenAddresses]);
 
-  console.log(approvalAmount);
-  console.log("approvalAddress", approvalAddress);
   const { isLoading: isApproving, writeAsync: approveAsync } = useScaffoldERCWrite(approvalAddress, "approve", [
     contractAddress,
     // 5000 in wei

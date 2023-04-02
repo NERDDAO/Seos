@@ -14,7 +14,7 @@ type UseAllowanceProps = {
 
 type AllowanceItem = {
   address: string;
-  allowance: any;
+  allowance: number;
   value: number;
   approved: boolean;
 };
@@ -34,7 +34,10 @@ const useAllowance = ({ tokens, owner, spender, onAllowanceFetched }: UseAllowan
       return {
         address: token.address, // Change 'token' to 'address'
         value: token.value,
-        allowance: allowance ? allowance.toNumber() : "", // Change 'approvedAmount' to 'allowance' and convert BigNumber to number
+
+        //add allowance convert from bigNumber type to number avoid overflow
+        allowance: allowance ? Number(ethers.utils.formatUnits(allowance, 18)) : 0,
+
         approved: allowance ? allowance.gte(tokenValueInWei) : false, // Change 'approved' type from 'any' to 'boolean'
       };
     });
