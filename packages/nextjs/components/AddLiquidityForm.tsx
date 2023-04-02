@@ -11,7 +11,7 @@ import { useUniswapPool } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 import { useScaffoldERCWrite } from "~~/hooks/scaffold-eth/useScaffoldERCWrite";
 import useAllowance from "~~/hooks/scaffold-eth/useAllowance";
-
+//IFTTEST
 function AddLiquidityForm(props: any) {
   const { lptokenAddress, tickLower, tickUpper, involvingETH, mainTokenAddress } = props;
   const addressZero = ethers.constants.AddressZero;
