@@ -11,7 +11,7 @@ import { useUniswapPool } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 import { useScaffoldERCWrite } from "~~/hooks/scaffold-eth/useScaffoldERCWrite";
 import useAllowance from "~~/hooks/scaffold-eth/useAllowance";
-//IFTTEST
+
 function AddLiquidityForm(props: any) {
   const { lptokenAddress, tickLower, tickUpper, involvingETH, mainTokenAddress } = props;
   const addressZero = ethers.constants.AddressZero;
@@ -222,6 +222,7 @@ function AddLiquidityForm(props: any) {
           amount0Min: parseAmount(amount0Min),
           amount1Min: parseAmount(amount1Min),
         },
+        ,
       ]
     : [
         {
@@ -234,7 +235,19 @@ function AddLiquidityForm(props: any) {
         },
       ];
 
-  const { isLoading, writeAsync } = useScaffoldContractWrite(contractName, functionNameToCall, args);
+  const ethValue = involvingETH === true ? amount1 : "0";
+
+  console.log("🚀 Constructed args of the tuple", {
+    setupIndex: tempSlice.pid,
+    amount0: parseAmount(amount0),
+    amount1: parseAmount(amount1),
+    positionOwner: positionOwner || addressZero,
+    amount0Min: parseAmount(amount0Min),
+    amount1Min: parseAmount(amount1Min),
+    ethValue: ethValue,
+  });
+
+  const { isLoading, writeAsync } = useScaffoldContractWrite(contractName, functionNameToCall, args, ethValue);
 
   const handleClick = async () => {
     if (!isLoading) {
