@@ -33,7 +33,7 @@ function AddLiquidityForm(props: any) {
     { address: "", value: 0, allowance: 0, approved: false },
     { address: "", value: 0, allowance: 0, approved: false },
   ]);
-  const contractName = "FarmMainRegularMinStake";
+  const contractName = "FarmMainRegularMinStake"; //can change name to actual name but must match contracts.
   const account = useAccount();
   const address = account?.address;
   const { balance, price, isError, onToggleBalance, isEthBalance } = useAccountBalance(account.address);
@@ -42,6 +42,7 @@ function AddLiquidityForm(props: any) {
   const eth = useEthPrice();
   const { executeQuery } = useAppStore(state => state.querySlice);
   const [userPositions, setUserPositions] = useState<Array<UserPositions>>([]);
+  console.log("userPositions:", userPositions);
 
   const handleExecuteQuery = async (address: string) => {
     const result = await executeQuery(address);
@@ -53,10 +54,11 @@ function AddLiquidityForm(props: any) {
   console.log("contractAddress:", contractAddress);
 
   useEffect(() => {
-    if (account?.address) {
-      handleExecuteQuery(account?.address);
+    if (address) {
+      handleExecuteQuery(address);
+      console.log("account?.address:", address);
     }
-  }, [account?.address]);
+  }, [address]);
 
   // Checks graph query result if user has a position else returns a string this happens when user has no position
 

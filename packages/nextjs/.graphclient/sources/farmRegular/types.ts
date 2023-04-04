@@ -3,7 +3,7 @@
 import { InContextSdkMethod } from '@graphql-mesh/types';
 import { MeshContext } from '@graphql-mesh/runtime';
 
-export namespace ContractTypes {
+export namespace FarmRegularTypes {
   export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -674,7 +674,7 @@ export type _SubgraphErrorPolicy_ =
   };
 
   export type Context = {
-      ["Contract"]: { Query: QuerySdk, Mutation: MutationSdk, Subscription: SubscriptionSdk },
+      ["farmRegular"]: { Query: QuerySdk, Mutation: MutationSdk, Subscription: SubscriptionSdk },
       
     };
 }
