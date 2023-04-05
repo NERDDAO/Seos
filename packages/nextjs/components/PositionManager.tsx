@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useScaffoldContractRead } from "~~/hooks/scaffold-eth";
 import { BigNumber, ethers } from "ethers";
+import { useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
+import { Button } from "@material-ui/core";
 
 const PositionManager = (props: any) => {
   const { positionId } = props;
@@ -15,6 +17,11 @@ const PositionManager = (props: any) => {
   //parse pending reward into number with 18 decimals
 
   const parsedPendingReward = pendingReward.data ? ethers.utils.formatUnits(pendingReward.data, 18) : "notFound";
+  const { isLoading, writeAsync } = useScaffoldContractWrite("FarmMainRegularMinStake", "withdrawReward", [positionId]);
+
+  const withdrawReward = async () => {
+    if (!isLoading) await writeAsync();
+  };
 
   console.log("POSITIONMANAGER", positionId, position);
 
@@ -35,6 +42,9 @@ const PositionManager = (props: any) => {
         //need to make this from big number into numbers with 18 decimals//
       }
       <p>Pending Reward: {pendingReward.data ? parsedPendingReward : "notFound"} OS</p>
+      <Button variant="contained" color="primary" onClick={withdrawReward} disabled={isLoading}>
+        Withdraw Reward
+      </Button>
     </div>
   );
 };
