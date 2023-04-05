@@ -13,7 +13,7 @@ import { useScaffoldERCWrite } from "~~/hooks/scaffold-eth/useScaffoldERCWrite";
 import useAllowance from "~~/hooks/scaffold-eth/useAllowance";
 
 function AddLiquidityForm(props: any) {
-  const { lptokenAddress, tickLower, tickUpper, involvingETH, mainTokenAddress } = props;
+  const { lptokenAddress, tickLower, tickUpper, involvingETH, mainTokenAddress, positionId } = props;
   const addressZero = ethers.constants.AddressZero;
   const [showPositionOwner, setShowPositionOwner] = useState(false);
   const { tempSlice } = useAppStore();
@@ -38,31 +38,12 @@ function AddLiquidityForm(props: any) {
   const address = account?.address;
   const { balance, price, isError, onToggleBalance, isEthBalance } = useAccountBalance(account.address);
   const addr = lptokenAddress;
-  // Uses Graph Protocol to fetch existing indexed positions
-  const eth = useEthPrice();
-  const { executeQuery } = useAppStore(state => state.querySlice);
-  const [userPositions, setUserPositions] = useState<Array<UserPositions>>([]);
-  console.log("userPositions:", userPositions);
 
-  const handleExecuteQuery = async (address: string) => {
-    const result = await executeQuery(address);
-    setUserPositions(result.user?.positions || []);
-  };
+  const eth = useEthPrice();
   //get contract address from deployedContractInfo
   const deployedContractInfo = useDeployedContractInfo(contractName);
   const contractAddress = deployedContractInfo.data?.address;
   console.log("contractAddress:", contractAddress);
-
-  useEffect(() => {
-    if (address) {
-      handleExecuteQuery(address);
-      console.log("account?.address:", address);
-    }
-  }, [address]);
-
-  // Checks graph query result if user has a position else returns a string this happens when user has no position
-
-  const positionId = userPositions?.length > 0 ? userPositions[0].id : null;
 
   // Get univ3 pool data
   const unipool = useUniswapPool(addr, tickLower, tickUpper, involvingETH, eth);

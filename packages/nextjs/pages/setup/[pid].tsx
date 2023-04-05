@@ -20,6 +20,8 @@ import { useScaffoldContractRead } from "~~/hooks/scaffold-eth";
 import AddLiquidityForm from "~~/components/AddLiquidityForm";
 import { useAppStore } from "~~/services/store/store";
 import { utils } from "ethers";
+import { UserPositions } from "~~/services/store/slices/querySlice";
+import PositionManager from "~~/components/PositionManager";
 
 const epochToDateAndTime = (epochTime: number) => {
   const dateObj = new Date(epochTime * 1000);
@@ -111,6 +113,29 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
   const [involvingETH, setInvolvingETH] = useState(false);
   const [mainTokenAddress, setMainTokenAddress] = useState("");
 
+  // Uses Graph Protocol to fetch existing indexed positions
+  const { executeQuery } = useAppStore(state => state.querySlice);
+  const [userPositions, setUserPositions] = useState<Array<UserPositions>>([]);
+  console.log("userPositions:", userPositions);
+
+  const handleExecuteQuery = async (address: string) => {
+    const result = await executeQuery(address);
+    setUserPositions(result.user?.positions || []);
+  };
+
+  useEffect(() => {
+    if (address) {
+      handleExecuteQuery(address);
+      console.log("account?.address:", address);
+    }
+  }, [address]);
+
+  // Checks graph query result if user has a position else returns a string this happens when user has no position
+
+  const positionId = userPositions?.length > 0 ? userPositions[0].id : null;
+
+  // Get univ3 pool data
+
   useEffect(() => {
     if (data) {
       setLptokenAddress(data.lpTokenAddress);
@@ -151,12 +176,14 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
           {children}
         </Typography>
       </CardContent>
+      <PositionManager positionId={positionId} />
       <AddLiquidityForm
         lptokenAddress={lptokenAddress}
         tickLower={tickLower}
         tickUpper={tickUpper}
         involvingETH={involvingETH}
         mainTokenAddress={mainTokenAddress}
+        positionId={positionId}
       />
     </Card>
   );
