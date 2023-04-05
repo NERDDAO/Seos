@@ -13,7 +13,8 @@ import { useScaffoldERCWrite } from "~~/hooks/scaffold-eth/useScaffoldERCWrite";
 import useAllowance from "~~/hooks/scaffold-eth/useAllowance";
 
 function AddLiquidityForm(props: any) {
-  const { lptokenAddress, tickLower, tickUpper, involvingETH, mainTokenAddress, positionId } = props;
+  const { lptokenAddress, tickLower, tickUpper, involvingETH, mainTokenAddress, positionId, liquidityPool, pool } =
+    props;
   const addressZero = ethers.constants.AddressZero;
   const [showPositionOwner, setShowPositionOwner] = useState(false);
   const { tempSlice } = useAppStore();
@@ -269,6 +270,23 @@ function AddLiquidityForm(props: any) {
     // 5000 in wei
     approvalAmount,
   ]);
+  const { isLoading: claimLoading, writeAsync: claimAsync } = useScaffoldContractWrite(contractName, "withdrawReward", [
+    positionId,
+  ]);
+
+  const { isLoading: withdrawLoading, writeAsync: withdrawAsync } = useScaffoldContractWrite(
+    contractName,
+    "withdrawLiquidity(uint256,uint128)",
+    [positionId, pool.data ? pool.data.liquidity : "0"],
+  );
+
+  const handleWithdraw = async () => {
+    if (!withdrawLoading) await withdrawAsync();
+  };
+
+  const withdrawReward = async () => {
+    if (!claimLoading) await claimAsync();
+  };
 
   const handleTokenApproval = async () => {
     if (!isApproving) await approveAsync();
@@ -371,9 +389,28 @@ function AddLiquidityForm(props: any) {
           <Button variant="contained" color="primary" onClick={handleClick} disabled={isLoading || !isApproved}>
             {isLoading ? "Loading..." : "Add Liquidity"}
           </Button>
-          <Button variant="contained" color="primary" onClick={handleTokenApproval} disabled={isLoading || isApproved}>
-            {isLoading ? "Loading..." : "Approve Tokens"}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleWithdraw}
+            disabled={withdrawLoading || !positionId}
+          >
+            {withdrawLoading ? "Loading..." : "Withdraw Liquidity"}
           </Button>
+
+          <div>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleTokenApproval}
+              disabled={isLoading || isApproved}
+            >
+              {isLoading ? "Loading..." : "Approve Tokens"}
+            </Button>
+            <Button variant="contained" color="primary" onClick={withdrawReward} disabled={isLoading}>
+              Claim Reward
+            </Button>
+          </div>
         </div>
         <div>
           <div>Balance: {balance}</div>

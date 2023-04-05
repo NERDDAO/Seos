@@ -3,25 +3,16 @@ import { useAccount } from "wagmi";
 import { useScaffoldContractRead } from "~~/hooks/scaffold-eth";
 import { BigNumber, ethers } from "ethers";
 import { useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
-import { Button } from "@material-ui/core";
+import { Button, Table } from "@material-ui/core";
 
 const PositionManager = (props: any) => {
-  const { positionId } = props;
-
-  const position = useScaffoldContractRead("FarmMainRegularMinStake", "position", [positionId]);
-  const pendingReward = useScaffoldContractRead("FarmMainRegularMinStake", "calculateFreeFarmingReward", [
-    positionId,
-    true,
-  ]);
+  const { positionId, position, pendingReward, pool } = props;
 
   //parse pending reward into number with 18 decimals
 
-  const parsedPendingReward = pendingReward.data ? ethers.utils.formatUnits(pendingReward.data, 18) : "notFound";
-  const { isLoading, writeAsync } = useScaffoldContractWrite("FarmMainRegularMinStake", "withdrawReward", [positionId]);
+  const liquidityPool = pool.data ? pool.data.liquidity.toString() : "notFound";
 
-  const withdrawReward = async () => {
-    if (!isLoading) await writeAsync();
-  };
+  const parsedPendingReward = pendingReward.data ? ethers.utils.formatUnits(pendingReward.data, 18) : "notFound";
 
   console.log("POSITIONMANAGER", positionId, position);
 
@@ -38,13 +29,8 @@ const PositionManager = (props: any) => {
       <h1>Position Manager</h1>
       <p>Position ID: {positionId}</p>
       <p>Position: {position.data ? position.data.toString() : "notFound"}</p>
-      {
-        //need to make this from big number into numbers with 18 decimals//
-      }
+      <p>Liquidity Pool: {liquidityPool}</p>
       <p>Pending Reward: {pendingReward.data ? parsedPendingReward : "notFound"} OS</p>
-      <Button variant="contained" color="primary" onClick={withdrawReward} disabled={isLoading}>
-        Withdraw Reward
-      </Button>
     </div>
   );
 };

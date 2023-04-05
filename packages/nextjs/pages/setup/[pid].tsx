@@ -22,6 +22,7 @@ import { useAppStore } from "~~/services/store/store";
 import { utils } from "ethers";
 import { UserPositions } from "~~/services/store/slices/querySlice";
 import PositionManager from "~~/components/PositionManager";
+import { ethers } from "ethers";
 
 const epochToDateAndTime = (epochTime: number) => {
   const dateObj = new Date(epochTime * 1000);
@@ -65,14 +66,20 @@ interface SetupCardProps {
   children?: React.ReactNode;
 }
 
-const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, children }) => {
+const SetupCard: React.FC<SetupCardProps> = ({ children }) => {
   const { address, isConnected } = useAccount();
-  const account = address;
-  const { tempSlice } = useAppStore();
   const classes = useStyles();
   const router = useRouter();
+  const [lptokenAddress, setLptokenAddress] = useState("");
+  const [tickLower, setTickLower] = useState("0");
+  const [tickUpper, setTickUpper] = useState("0");
+  const [involvingETH, setInvolvingETH] = useState(false);
+  const [mainTokenAddress, setMainTokenAddress] = useState("");
+  const { executeQuery } = useAppStore(state => state.querySlice);
+  const [userPositions, setUserPositions] = useState<Array<UserPositions>>([]);
+  const [liquidity, setLiquidity] = useState(0);
   // @dev
-  // this is the contract for the MinStake farm position. Our first version should behardcoded  to the oregular one
+  // name arbitrarly set in contracts.json
 
   const contractName = "FarmMainRegularMinStake";
   const functionName = "setup";
@@ -107,15 +114,8 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
 
   console.log("data", data);
 
-  const [lptokenAddress, setLptokenAddress] = useState("");
-  const [tickLower, setTickLower] = useState("0");
-  const [tickUpper, setTickUpper] = useState("0");
-  const [involvingETH, setInvolvingETH] = useState(false);
-  const [mainTokenAddress, setMainTokenAddress] = useState("");
-
   // Uses Graph Protocol to fetch existing indexed positions
-  const { executeQuery } = useAppStore(state => state.querySlice);
-  const [userPositions, setUserPositions] = useState<Array<UserPositions>>([]);
+
   console.log("userPositions:", userPositions);
 
   const handleExecuteQuery = async (address: string) => {
@@ -135,6 +135,22 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
   const positionId = userPositions?.length > 0 ? userPositions[0].id : null;
 
   // Get univ3 pool data
+  const position = useScaffoldContractRead("FarmMainRegularMinStake", "position", [positionId]);
+  const pendingReward = useScaffoldContractRead("FarmMainRegularMinStake", "calculateFreeFarmingReward", [
+    positionId,
+    true,
+  ]);
+
+  const tokenId = position.data?.tokenId;
+
+  const pool = useScaffoldContractRead("UniswapV3NonfungiblePositionManagerABI", "positions", [tokenId]);
+
+  console.log("POOL", pool.data ? pool.data.liquidity.toString() : "notFound");
+  //parse pending reward into number with 18 decimals
+
+  const liquidityPool = pool.data ? pool.data.liquidity.toString() : "notFound";
+
+  console.log("POSITIONMANAGER", positionId, position);
 
   useEffect(() => {
     if (data) {
@@ -176,7 +192,13 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
           {children}
         </Typography>
       </CardContent>
-      <PositionManager positionId={positionId} />
+      <PositionManager
+        positionId={positionId}
+        liquidityPool={liquidityPool}
+        pendingReward={pendingReward}
+        position={position}
+        pool={pool}
+      />
       <AddLiquidityForm
         lptokenAddress={lptokenAddress}
         tickLower={tickLower}
@@ -184,6 +206,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ web3, farmingContractAddress, chi
         involvingETH={involvingETH}
         mainTokenAddress={mainTokenAddress}
         positionId={positionId}
+        pool={pool}
       />
     </Card>
   );
