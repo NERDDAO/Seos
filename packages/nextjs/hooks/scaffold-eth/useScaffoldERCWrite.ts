@@ -3,7 +3,7 @@ import { useContractWrite, useNetwork } from "wagmi";
 import { getParsedEthersError } from "~~/components/scaffold-eth/Contract/utilsContract";
 import { getTargetNetwork, notification } from "~~/utils/scaffold-eth";
 import { useTransactor } from "~~/hooks/scaffold-eth/useTransactor";
-import { useDeployedContractInfo } from "./useDeployedContractInfo";
+import { useDeployedERC20Info } from "./useDeployedERC20Info";
 
 /**
  * @dev wrapper for wagmi's useContractWrite hook(with config prepared by usePrepareContractWrite hook) which loads in deployed contract abi and address automatically
@@ -15,7 +15,7 @@ import { useDeployedContractInfo } from "./useDeployedContractInfo";
 export const useScaffoldERCWrite = (tokenAddress: string, functionName: string, args?: any[], value?: string) => {
   const contractName = "Erc20";
   const configuredChain = getTargetNetwork();
-  const { data: deployedContractData } = useDeployedContractInfo(contractName);
+  const { data: deployedERC20Data } = useDeployedERC20Info(tokenAddress);
   const { chain } = useNetwork();
   const writeTx = useTransactor();
 
@@ -23,7 +23,7 @@ export const useScaffoldERCWrite = (tokenAddress: string, functionName: string, 
     mode: "recklesslyUnprepared",
     chainId: configuredChain.id,
     address: tokenAddress,
-    abi: deployedContractData?.abi,
+    abi: deployedERC20Data?.abi,
     args,
     functionName,
     overrides: {
@@ -32,7 +32,7 @@ export const useScaffoldERCWrite = (tokenAddress: string, functionName: string, 
   });
 
   const sendContractWriteTx = async () => {
-    if (!deployedContractData) {
+    if (!deployedERC20Data) {
       notification.error("Target Contract is not deployed, did you forgot to run `yarn deploy`?");
       return;
     }

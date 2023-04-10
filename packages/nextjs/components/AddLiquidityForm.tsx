@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useEthPrice, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { TextField, Button, Grid, Typography, FormControlLabel, Checkbox } from "@material-ui/core";
-import BigNumber from "bignumber.js";
 import { useAccount, useProvider } from "wagmi";
 import { useAccountBalance } from "~~/hooks/scaffold-eth/useAccountBalance";
 import { useAppStore } from "~~/services/store/store";
 import { UserPositions } from "~~/services/store/slices/querySlice";
-import { ethers, Signer } from "ethers";
+import { ethers, BigNumber } from "ethers";
 import { parseAmount } from "~~/utils/amountConversionWithHandler";
 import { useUniswapPool } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
+import { useScaffoldERCWrite } from "~~/hooks/scaffold-eth/useScaffoldERCWrite";
 import useAllowance from "~~/hooks/scaffold-eth/useAllowance";
 
 function AddLiquidityForm(props: any) {
@@ -25,21 +25,18 @@ function AddLiquidityForm(props: any) {
   const [percentageSetting, setPercentageSetting] = useState(";"); // default to 1%
   const [lastUpdatedField, setLastUpdatedField] = useState("");
   const [currentPrice, setCurrentPrice] = useState(0);
+  // set state for bignumber
+  const [approvalAmount, setApprovalAmount] = useState<BigNumber>(BigNumber.from(0));
+  const [approvalAddress, setApprovalAddress] = useState("");
   // create e const for the array of token addresses, that will also contain the input value and approval state
   const [tokenAddresses, setTokenAddresses] = useState([
     { address: "", value: 0, allowance: 0, approved: false },
     { address: "", value: 0, allowance: 0, approved: false },
   ]);
-
-  const [error, setError] = useState("");
-  const [approveLoading, setApproveLoading] = useState(false);
-  const contractName = "FarmMainRegularMinStake";
+  const contractName = "FarmMainRegularMinStake"; //can change name to actual name but must match contracts.
   const account = useAccount();
   const address = account?.address;
-
   const { balance, price, isError, onToggleBalance, isEthBalance } = useAccountBalance(account.address);
-
-  const provider = useProvider();
   const addr = lptokenAddress;
   // Uses Graph Protocol to fetch existing indexed positions
   const eth = useEthPrice();
@@ -123,42 +120,13 @@ function AddLiquidityForm(props: any) {
     console.log("error:", e);
   }
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // Old logic
-        const amount0Value = new BigNumber(amount0);
-        const amount1Value = new BigNumber(amount1);
-
-        if (lastUpdatedField === "amount0") {
-          if (amount0Value.isGreaterThan(0) && currentPrice) {
-            const correspondingAmount1 = amount0Value.multipliedBy(currentPrice);
-            setAmount1(correspondingAmount1.toString());
-          } else {
-            setAmount1("");
-          }
-        } else if (lastUpdatedField === "amount1") {
-          if (amount1Value.isGreaterThan(0) && currentPrice) {
-            const correspondingAmount0 = amount1Value.dividedBy(currentPrice);
-            setAmount0(correspondingAmount0.toString());
-          } else {
-            setAmount0("");
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    fetchData();
-  }, [amount0, amount1, lastUpdatedField, price, currentPrice]);
-
   // Handles Inputs for tokens: Token A is derived from Token B
 
   const handleAmount0Change = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount0(e.target.value);
     setLastUpdatedField("amount0");
     if (currentPrice && !isNaN(parseFloat(e.target.value))) {
-      setAmount1((parseFloat(e.target.value) / currentPrice).toString());
+      setAmount1((parseFloat(e.target.value) * currentPrice).toString());
     }
   };
 
@@ -166,7 +134,7 @@ function AddLiquidityForm(props: any) {
     setAmount1(e.target.value);
     setLastUpdatedField("amount1");
     if (currentPrice && !isNaN(parseFloat(e.target.value))) {
-      setAmount0((parseFloat(e.target.value) * currentPrice).toString());
+      setAmount0((parseFloat(e.target.value) / currentPrice).toString());
     }
   };
   // Scaffold Contract Write takes contract and function + args (Touple) and should handle the transaction
@@ -222,6 +190,20 @@ function AddLiquidityForm(props: any) {
     onAllowanceFetched: updateTokenAllowances,
   });
 
+  console.log("allowance", allowance);
+
+  const isApproved = useMemo(() => {
+    return tokenAddresses.every(token => token.approved);
+  }, [tokenAddresses]);
+
+  // determine which token index (approved = false)
+
+  const tokenIndex = useMemo(() => {
+    return tokenAddresses.findIndex(token => !token.approved);
+  }, [tokenAddresses]);
+
+  console.log("tokenIndex", tokenIndex);
+
   console.log("allowance", tokenAddresses);
 
   //...if approved, show add liquidity button...
@@ -240,6 +222,7 @@ function AddLiquidityForm(props: any) {
           amount0Min: parseAmount(amount0Min),
           amount1Min: parseAmount(amount1Min),
         },
+        ,
       ]
     : [
         {
@@ -252,68 +235,61 @@ function AddLiquidityForm(props: any) {
         },
       ];
 
-  const { isLoading, writeAsync } = useScaffoldContractWrite(contractName, functionNameToCall, args);
+  const ethValue = involvingETH === true ? amount1 : "0";
+
+  console.log("🚀 Constructed args of the tuple", {
+    setupIndex: tempSlice.pid,
+    amount0: parseAmount(amount0),
+    amount1: parseAmount(amount1),
+    positionOwner: positionOwner || addressZero,
+    amount0Min: parseAmount(amount0Min),
+    amount1Min: parseAmount(amount1Min),
+    ethValue: ethValue,
+  });
+
+  const { isLoading, writeAsync } = useScaffoldContractWrite(contractName, functionNameToCall, args, ethValue);
 
   const handleClick = async () => {
     if (!isLoading) {
-      const approved = tokenAddresses.every(token => token.approved);
-      if (approved) {
-        console.log("🚀 Constructed args of the tuple", {
-          setupIndex: tempSlice.pid,
-          amount0: parseAmount(amount0),
-          amount1: parseAmount(amount1),
-          positionOwner: positionOwner || addressZero,
-          amount0Min: parseAmount(amount0Min),
-          amount1Min: parseAmount(amount1Min),
-        });
-        await writeAsync();
-      } else {
-        setError("Please approve both tokens before adding liquidity.");
-      }
+      console.log("🚀 Constructed args of the tuple", {
+        setupIndex: tempSlice.pid,
+        amount0: parseAmount(amount0),
+        amount1: parseAmount(amount1),
+        positionOwner: positionOwner || addressZero,
+        amount0Min: parseAmount(amount0Min),
+        amount1Min: parseAmount(amount1Min),
+      });
+      await writeAsync();
     }
   };
 
-  const onTokenApproval = async (tokenAddress: string) => {
-    try {
-      setApproveLoading(true);
-      setError("");
-
-      if (!window.ethereum) {
-        throw new Error("Ethereum provider not found");
-      }
-
-      const provider = new ethers.providers.Web3Provider(window.ethereum as ethers.providers.ExternalProvider);
-
-      let resolvedTokenAddress: string | null = tokenAddress;
-
-      if (!ethers.utils.isAddress(tokenAddress)) {
-        resolvedTokenAddress = await provider.resolveName(tokenAddress);
-
-        if (!resolvedTokenAddress) {
-          resolvedTokenAddress = tokenAddress;
-        }
-      }
-
-      const signer = provider.getSigner();
-
-      const contract = new ethers.Contract(
-        resolvedTokenAddress,
-        ["function approve(address _spender, uint256 _value) public returns (bool success)"],
-        signer,
-      );
-
-      const approveTx = await contract.approve(contractAddress, ethers.constants.MaxUint256);
-      await approveTx.wait();
-
-      setTokenAddresses(prev =>
-        prev.map(token => (token.address === resolvedTokenAddress ? { ...token, approved: true } : token)),
-      );
-    } catch (e) {
-      console.error("Error approving token:", e);
-      setError("Error approving token. Please try again.");
-    } finally {
-      setApproveLoading(false);
+  useEffect(() => {
+    if (tokenIndex !== -1) {
+      const approvalAddress = tokenAddresses[tokenIndex]?.address ? tokenAddresses[tokenIndex].address : "0x";
+      const approvalAmount = tokenAddresses[tokenIndex].value
+        ? ethers.utils.parseUnits(
+            tokenAddresses[tokenIndex].value.toString(),
+            18, // change to tokenDecimals if needed
+          )
+        : ethers.utils.parseUnits("0", 18);
+      setApprovalAmount(approvalAmount);
+      setApprovalAddress(approvalAddress);
+    } else {
+      const approvalAddress = "0x";
+      setApprovalAmount(ethers.utils.parseUnits("0", 18));
+      setApprovalAddress(approvalAddress);
     }
+  }, [tokenIndex, tokenAddresses]);
+
+  const { isLoading: isApproving, writeAsync: approveAsync } = useScaffoldERCWrite(approvalAddress, "approve", [
+    contractAddress,
+    // 5000 in wei
+    approvalAmount,
+  ]);
+
+  const handleTokenApproval = async () => {
+    if (!isApproving) await approveAsync();
+    // Add any additional logic after token approval if needed
   };
 
   return (
@@ -408,34 +384,14 @@ function AddLiquidityForm(props: any) {
           style={{ margin: "20px 0" }}
           disabled
         />
-        {error && <Typography color="error">{error}</Typography>}
-
-        {tokenAddresses.map((token, index) => (
-          <Button
-            key={token.address}
-            type="button"
-            variant="contained"
-            color="primary"
-            style={{ marginTop: "20px", marginRight: "5px" }}
-            onClick={() => onTokenApproval(token.address)}
-            disabled={approveLoading || token.approved}
-          >
-            {approveLoading ? "Approving..." : token.approved ? "Approved" : "Approve Token"}
+        <div>
+          <Button variant="contained" color="primary" onClick={handleClick} disabled={isLoading || !isApproved}>
+            {isLoading ? "Loading..." : "Add Liquidity"}
           </Button>
-        ))}
-
-        <Button
-          type="button"
-          variant="contained"
-          color="primary"
-          style={{ marginTop: "20px" }}
-          onClick={() => {
-            handleClick();
-          }}
-        >
-          Add Liquidity
-        </Button>
-
+          <Button variant="contained" color="primary" onClick={handleTokenApproval} disabled={isLoading || isApproved}>
+            {isLoading ? "Loading..." : "Approve Tokens"}
+          </Button>
+        </div>
         <div>
           <div>Balance: {balance}</div>
           <div>Price: {eth}</div>
