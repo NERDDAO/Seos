@@ -1,6 +1,6 @@
 # .graphclientrc.yml
 sources:
-  - name: farmRegular
+  - name: Contract
     handler:
       graphql:
-        endpoint: https://api.thegraph.com/subgraphs/name/ataxia123/farmreg
+        endpoint: https://api.thegraph.com/subgraphs/name/ataxia123/osgraph

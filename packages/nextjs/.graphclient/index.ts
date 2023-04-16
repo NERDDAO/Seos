@@ -16,7 +16,7 @@ import { getMesh, ExecuteMeshFn, SubscribeMeshFn, MeshContext as BaseMeshContext
 import { MeshStore, FsStoreStorageAdapter } from '@graphql-mesh/store';
 import { path as pathModule } from '@graphql-mesh/cross-helpers';
 import { ImportFn } from '@graphql-mesh/types';
-import type { FarmRegularTypes } from './sources/farmRegular/types';
+import type { ContractTypes } from './sources/Contract/types';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -914,7 +914,7 @@ export type DirectiveResolvers<ContextType = MeshContext> = ResolversObject<{
   derivedFrom?: derivedFromDirectiveResolver<any, any, ContextType>;
 }>;
 
-export type MeshContext = FarmRegularTypes.Context & BaseMeshContext;
+export type MeshContext = ContractTypes.Context & BaseMeshContext;
 
 
 import { fileURLToPath } from '@graphql-mesh/utils';
@@ -923,8 +923,8 @@ const baseDir = pathModule.join(pathModule.dirname(fileURLToPath(import.meta.url
 const importFn: ImportFn = <T>(moduleId: string) => {
   const relativeModuleId = (pathModule.isAbsolute(moduleId) ? pathModule.relative(baseDir, moduleId) : moduleId).split('\\').join('/').replace(baseDir + '/', '');
   switch(relativeModuleId) {
-    case ".graphclient/sources/farmRegular/introspectionSchema":
-      return import("./sources/farmRegular/introspectionSchema") as T;
+    case ".graphclient/sources/Contract/introspectionSchema":
+      return import("./sources/Contract/introspectionSchema") as T;
     
     default:
       return Promise.reject(new Error(`Cannot find module '${relativeModuleId}'.`));
@@ -956,22 +956,22 @@ const cache = new (MeshCache as any)({
 const sources: MeshResolvedSource[] = [];
 const transforms: MeshTransform[] = [];
 const additionalEnvelopPlugins: MeshPlugin<any>[] = [];
-const farmRegularTransforms = [];
+const contractTransforms = [];
 const additionalTypeDefs = [] as any[];
-const farmRegularHandler = new GraphqlHandler({
-              name: "farmRegular",
-              config: {"endpoint":"https://api.thegraph.com/subgraphs/name/ataxia123/farmreg"},
+const contractHandler = new GraphqlHandler({
+              name: "Contract",
+              config: {"endpoint":"https://api.thegraph.com/subgraphs/name/ataxia123/osgraph"},
               baseDir,
               cache,
               pubsub,
-              store: sourcesStore.child("farmRegular"),
-              logger: logger.child("farmRegular"),
+              store: sourcesStore.child("Contract"),
+              logger: logger.child("Contract"),
               importFn,
             });
 sources[0] = {
-          name: 'farmRegular',
-          handler: farmRegularHandler,
-          transforms: farmRegularTransforms
+          name: 'Contract',
+          handler: contractHandler,
+          transforms: contractTransforms
         }
 const additionalResolvers = [] as any[]
 const merger = new(BareMerger as any)({
