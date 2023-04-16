@@ -275,6 +275,26 @@ function AddLiquidityForm(props: any) {
     // Add any additional logic after token approval if needed
   };
 
+  const handleWithdrawLiquidity = async () => {
+    const functionNameToCall = "_withdrawLiquidity";
+    const args = [
+      positionId,
+      {
+        setupIndex: tempSlice.pid,
+        amount0: parseAmount(amount0),
+        amount1: parseAmount(amount1),
+        positionOwner: positionOwner || addressZero,
+        amount0Min: parseAmount(amount0Min),
+        amount1Min: parseAmount(amount1Min),
+      },
+    ];
+
+    const ethValue = involvingETH === true ? amount1 : "0";
+    if (!isLoading) {
+      await writeAsync();
+    }
+  };
+
   return (
     <Grid container direction="column" alignItems="center">
       <Typography variant="h6" style={{ marginTop: "20px" }}>
@@ -373,6 +393,14 @@ function AddLiquidityForm(props: any) {
           </Button>
           <Button variant="contained" color="primary" onClick={handleTokenApproval} disabled={isLoading || isApproved}>
             {isLoading ? "Loading..." : "Approve Tokens"}
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleWithdrawLiquidity}
+            disabled={isLoading || !isApproved}
+          >
+            {isLoading ? "Loading..." : "Remove Liquidity"}
           </Button>
         </div>
         <div>
