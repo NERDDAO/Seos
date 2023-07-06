@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useScaffoldContractRead } from "../hooks/scaffold-eth/useScaffoldContractRead";
+import { Card } from "@material-ui/core";
+import { Button } from "@mui/material";
 import type { NextPage } from "next";
 import { BugAntIcon, MagnifyingGlassIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { MetaHeader } from "~~/components/MetaHeader";
@@ -28,7 +30,7 @@ const Home: NextPage = () => {
 
   console.log("⚡️ ~ file: index.tsx:54 ~ isFetching:", isFetching, data, error);
   if (data) {
-    console.log("⚡️ ~ file: index.tsx:54 ~ data:", data);
+    console.log("⚡️ ~ file: ind.tsx:54 ~ data:", data);
   }
 
   if (error) {
@@ -44,20 +46,28 @@ const Home: NextPage = () => {
           {data?.map(
             (item: any) =>
               item.active === true && (
-                <div key={item.id}>
+                <Card
+                  className="flex flex-col justify-center items-center p-5 m-5 w-96 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded"
+                  key={item.id}
+                >
+                  SETUP INFO
+                  <br />
                   <>
                     Start Block: {item.startBlock.toString()}
                     <br /> {item.active == true && "ACTIVE"}
                   </>
                   <br />
-                  <button
+                  <Button
+                    className={
+                      "bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded"
+                    }
                     onClick={() => {
                       handleClick(item.infoIndex.toString(), item.startBlock.toString());
                     }}
                   >
-                    BUTTON
-                  </button>
-                </div>
+                    Open Setup
+                  </Button>
+                </Card>
               ),
           )}
         </div>
