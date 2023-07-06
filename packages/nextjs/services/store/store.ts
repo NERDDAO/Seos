@@ -11,10 +11,20 @@ import create from "zustand";
 
 type TGlobalState = {
   nativeCurrencyPrice: number;
+  setupInfo: {
+    pid: string | null;
+    startingBlock: string | null;
+  };
+  setSetupInfo: (newSetupnfo: { pid: string; startingBlock: string }) => void;
   setNativeCurrencyPrice: (newNativeCurrencyPriceState: number) => void;
 };
 
 export const useGlobalState = create<TGlobalState>(set => ({
+  setupInfo: {
+    pid: null,
+    startingBlock: null,
+  },
+  setSetupInfo: (newSetupId: { pid: string; startingBlock: string }): void => set(() => ({ setupInfo: newSetupId })),
   nativeCurrencyPrice: 0,
   setNativeCurrencyPrice: (newValue: number): void => set(() => ({ nativeCurrencyPrice: newValue })),
 }));
