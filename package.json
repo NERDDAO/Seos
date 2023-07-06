@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@material-ui/core": "^4.12.4",
+    "ethers": "^6.6.2",
     "graphql-tag": "^2.12.6"
   }
 }

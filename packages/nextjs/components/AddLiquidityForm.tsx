@@ -105,22 +105,30 @@ function AddLiquidityForm(props: any) {
   }
 
   // Handles Inputs for tokens: Token A is derived from Token B
-
   const handleAmount0Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("handleAmount0Change called with value:", e.target.value);
     setAmount0(e.target.value);
     setLastUpdatedField("amount0");
+    console.log("currentPrice in handleAmount0Change", currentPrice);
     if (currentPrice && !isNaN(parseFloat(e.target.value))) {
-      setAmount1((parseFloat(e.target.value) * currentPrice).toString());
+      const calculatedAmount1 = parseFloat(e.target.value) * currentPrice;
+      console.log("calculatedAmount1", calculatedAmount1);
+      setAmount1(calculatedAmount1.toString());
     }
   };
 
   const handleAmount1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("handleAmount1Change called with value:", e.target.value);
     setAmount1(e.target.value);
     setLastUpdatedField("amount1");
+    console.log("currentPrice in handleAmount1Change", currentPrice);
     if (currentPrice && !isNaN(parseFloat(e.target.value))) {
-      setAmount0((parseFloat(e.target.value) / currentPrice).toString());
+      const calculatedAmount0 = parseFloat(e.target.value) / currentPrice;
+      console.log("calculatedAmount0", calculatedAmount0);
+      setAmount0(calculatedAmount0.toString());
     }
   };
+
   // Scaffold Contract Write takes contract and function + args (Touple) and should handle the transaction
 
   useEffect(() => {
