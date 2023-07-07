@@ -79,11 +79,11 @@ const SetupCard = (props: SetupType) => {
     <Card className="flex flex-col text-left overflow-scroll p-5 m-5 w-196 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded overflow-X-scroll">
       Setup #{props.pid}
       Rewards Per Block:{" "}
-      {isFetching
+      {isFetching && !data
         ? "Loading..."
         : error
-        ? error.message
-        : data && (
+          ? error.message
+          : data && (
             <TableBody>
               {Object.entries(variableNames).map(([key, value]) => (
                 <TableRow key={key}>
