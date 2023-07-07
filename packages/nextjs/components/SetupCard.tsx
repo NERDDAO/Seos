@@ -15,11 +15,13 @@ type namedDataType = {
   lpTokenAddress: string;
   MainToken: string;
   minStakeableAmount: string;
+  tickLower: string;
+  tickUpper: string;
 };
 
 const SetupCard = (props: SetupType) => {
   const epochToDateAndTime = (epochTime: number) => {
-    const dateObj = new Date(epochTime * 1000);
+    const dateObj = new Date(epochTime * 100000);
     const date = dateObj.toLocaleDateString();
     const time = dateObj.toLocaleTimeString();
 
@@ -39,6 +41,8 @@ const SetupCard = (props: SetupType) => {
     lpTokenAddress: "LP Token Address",
     MainToken: "Main Token",
     minStakeableAmount: "Min Stakeable Amount",
+    tickLower: "Tick Lower",
+    tickUpper: "Tick Upper",
   };
   var namedData: namedDataType = {
     startBlock: "",
@@ -48,19 +52,21 @@ const SetupCard = (props: SetupType) => {
     lpTokenAddress: "",
     MainToken: "",
     minStakeableAmount: "",
+    tickLower: "",
+    tickUpper: "",
   };
 
   console.log("data", data);
 
   if (data) {
     namedData = {
-      //@ts-ignore
+      //i think the ABI is telling TS the wrong array type
 
       startBlock: data[0].startBlock ? epochToDateAndTime(data[0].startBlock.toString()) : "",
-      rewardPerBlock: data[0].rewardPerBlock ? utils.formatEther(data[0].rewardPerBlock) : "",
-      totalSupply: data[0].totalSupply ? utils.formatEther(data[0].totalSupply) : "",
+      rewardPerBlock: data[0].rewardPerBlock ? BigInt(data[0].rewardPerBlock).toString() : "",
+      totalSupply: data[0].totalSupply ? BigInt(data[0].totalSupply).toString() : "",
       //handle boolean type: there's  prob better way to do this
-      involvingEth: data[1].involvingETH == true ? true : data[1].involvingETH == false ? false : "undef",
+      involvingEth: data[1].involvingETH == true ? "true" : data[1].involvingETH == false ? "false" : "undef",
       lpTokenAddress: data[1].liquidityPoolTokenAddress ? data[1].liquidityPoolTokenAddress : "",
       MainToken: data[1].mainTokenAddress ? data[1].mainTokenAddress : "",
       minStakeableAmount: data[1].minStakeable ? BigInt(data[1].minStakeable) : "notfound",
@@ -69,25 +75,8 @@ const SetupCard = (props: SetupType) => {
     };
   }
 
-  //
-  // const [lptokenAddress, setLptokenAddress] = useState("");
-  // const [tickLower, setTickLower] = useState("0");
-  // const [tickUpper, setTickUpper] = useState("0");
-  // const [involvingETH, setInvolvingETH] = useState(false);
-  // const [mainTokenAddress, setMainTokenAddress] = useState("");
-  //
-  // useEffect(() => {
-  //   if (data) {
-  //     setLptokenAddress(data.lpTokenAddress);
-  //     setTickLower(data.tickLower);
-  //     setTickUpper(data.tickUpper);
-  //     setInvolvingETH(data.involvingEth);
-  //     setMainTokenAddress(data.MainToken);
-  //   }
-  // }, [data]);
-
   return (
-    <Card className="flex flex-col text-left p-5 m-5 w-196 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded overflow-X-scroll">
+    <Card className="flex flex-col text-left overflow-scroll p-5 m-5 w-196 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded overflow-X-scroll">
       Setup #{props.pid}
       Rewards Per Block:{" "}
       {isFetching

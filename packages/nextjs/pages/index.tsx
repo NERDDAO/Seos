@@ -4,7 +4,6 @@ import { useScaffoldContractRead } from "../hooks/scaffold-eth/useScaffoldContra
 import { Card } from "@material-ui/core";
 import { Button } from "@mui/material";
 import type { NextPage } from "next";
-import { BugAntIcon, MagnifyingGlassIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { MetaHeader } from "~~/components/MetaHeader";
 import { useGlobalState } from "~~/services/store/store";
 
@@ -22,8 +21,7 @@ const Home: NextPage = () => {
   //
   const setPid = useGlobalState(state => state.setSetupInfo);
   function handleClick(pid: string, rpb: string) {
-    let override = "1";
-    let soverride = "100000";
+
     setPid({ pid: pid, startingBlock: rpb });
     router.push(`/setup/${pid}`);
   }
