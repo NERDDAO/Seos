@@ -1,7 +1,8 @@
 import { useState } from "react";
-import ToDo from "../../components/NerdTodo";
 import { Card } from "@mui/material";
 import { useAccount } from "wagmi";
+import ToDo from "~~/components/NerdTodo";
+import SetupCard from "~~/components/SetupCard";
 import { useScaffoldEventHistory } from "~~/hooks/scaffold-eth";
 import { useScaffoldContractRead } from "~~/hooks/scaffold-eth/useScaffoldContractRead";
 import { useGlobalState } from "~~/services/store/store";
@@ -12,12 +13,7 @@ export default function SetupPage() {
   const startingBlock = useGlobalState(state =>
     parseInt(state.setupInfo.startingBlock ? state.setupInfo.startingBlock : "0"),
   );
-  // Get setup info from contract
-  const { data, isFetching, error } = useScaffoldContractRead({
-    contractName: "FarmMainRegularMinStake",
-    functionName: "setup",
-    args: [BigInt(pid)],
-  });
+
   const { address, isConnected } = useAccount();
   // get position ID from transfer events
   const { data: history, error: historyError } = useScaffoldEventHistory({
@@ -36,17 +32,46 @@ export default function SetupPage() {
         </div>
         <div className="text-2xl font-bold text-center align-middle mb-4">
           Setup Info
+          {/* 
+            DEV NOTES
+            ==========
+         Component: SetupCard 
+          ====================================
+          Component purpose: Display setup Info
+          ====================================
+          What info?
+          - Setup id
+          - Pool Info
+          --- Pool id
+          --- Pool token
+          --- Pool token address
+          --- tickPrice
+          --- available Positions
+          ====================================
+          Component: Position Manager
+          ====================================
+          Component purpose: Display position Info
+          and allow user to add/remove/claimRewards
+          on position
+          ====================================
+          Elements:
+          - Position id
+          - User balance
+          - input fields token1 and token2
+          - Approve button
+          -Claim button
+          -add/Remove position button
+          */}
+          <SetupCard pid={pid} />
           <Card>
             <div>
-              Rewards Per Block:{" "}
-              {isFetching ? (
-                "Loading..."
-              ) : error ? (
-                error.message
+              Active Setups
+              {historyError ? (
+                historyError
               ) : (
                 <>
                   {/*@ts-ignore*/}
-                  <span> {data ? [0] && data[0].rewardPerBlock.toString() : "undefined"} </span>
+
                   {history?.map(item => {
                     <div key={item}>Some Stuff</div>;
                   })}
