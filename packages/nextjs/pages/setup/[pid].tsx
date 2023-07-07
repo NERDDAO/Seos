@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ToDo from "../../components/NerdTodo";
 import { Card } from "@mui/material";
 import { useAccount } from "wagmi";
 import { useScaffoldEventHistory } from "~~/hooks/scaffold-eth";
@@ -31,28 +32,7 @@ export default function SetupPage() {
       <div className="flex flex-col items-center justify-center min-h-screen py-2">
         <div className="text-2xl font-bold text-center align-middle mb-4">
           Setup #{pid?.toString()}
-          <Card>
-            <ul className="list-disc list-inside">
-              <span className="font-bold text-lg text-center align-middle">Todo List</span>
-              <li>
-                {" "}
-                Setup Info: Fetch on chain data for active setup <span style={{ color: "red" }}>Done</span>
-              </li>
-
-              <li>
-                {" "}
-                Graph Query: Redeploy graph and fetch active positions
-                <ul className="">
-                  <li>
-                    <span style={{ fontWeight: "bold" }}>**NEW***</span> useScaffold contract listener instead
-                  </li>
-                </ul>
-              </li>
-              <li> Add Liquidity function []</li>
-              <li> Remove Liquidity function []</li>
-              <li> Claim FUnction []</li>
-            </ul>
-          </Card>
+          <ToDo />
         </div>
         <div className="text-2xl font-bold text-center align-middle mb-4">
           Setup Info
