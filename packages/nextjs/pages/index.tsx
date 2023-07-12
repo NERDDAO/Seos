@@ -16,9 +16,6 @@ const Home: NextPage = () => {
     contractName: contractName,
     functionName: functionName,
   });
-
-  //TODO: store selected pid on the global state
-  //
   const setPid = useGlobalState(state => state.setSetupInfo);
   function handleClick(pid: string, rpb: string) {
 
@@ -52,7 +49,7 @@ const Home: NextPage = () => {
                   <br />
                   <>
                     Start Block: {item.startBlock.toString()}
-                    <br /> {item.active == true && "ACTIVE"}
+                    <br /> {item.active === true && "ACTIVE"}
                   </>
                   <br />
                   <Button
