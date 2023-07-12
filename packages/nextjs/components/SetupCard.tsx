@@ -65,7 +65,7 @@ const SetupCard = (props: SetupType) => {
 
   if (data) {
     namedData = {
-      //i think the ABI is telling TS the wrong array type
+      //TODO: i think the ABI is telling TS the wrong array type
 
       startBlock: data[0].startBlock ? epochToDateAndTime(data[0].startBlock.toString()) : "",
       rewardPerBlock: data[0].rewardPerBlock ? BigInt(data[0].rewardPerBlock).toString() : "",

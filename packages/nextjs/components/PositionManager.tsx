@@ -10,7 +10,6 @@ import { } from "@uniswap/sdk-core"
 type pMProps = {
   startingBlock: number;
   lpTokenAddress: `0x${string}`;
-  positionId: number;
 };
 
 type Slot0ReturnType = {
@@ -31,12 +30,43 @@ type addLiquidityArgs = {
   address: string;
 
 }
-
+//DEV NOTE::
+//Logic for position manager component: 
+// 1) get position id from transfer events
+// 2) get pool information from lpTokenAddres
+// 3b) get token balances from user address
+// 3) get position information from position ids
+// 4) display position information
+//
+//
+//TODO: 
+//1) Smart contract queries
+//- get position id from transfer events[x]
+//- get pool information from lpTokenAddress[x]
+//- get token balances from user address[ ]
+//- get position information from position ids[ ]
+//2) UI inputs
+//3) UI display
+//           -- functions:
+//           handleAMmountChange{
+//           -- get price of ether
+//           -- determine price of token using pool information 
+//           -- change ammound based on price
+//           }
+//            handleApprove{
+//            check approval status
+//            run approvals for missing tokens
+//            }
+//
 const PositionManager = (props: pMProps) => {
+  // chain setup
+  const publicClient = usePublicClient()
   const { address, isConnected } = useAccount();
-  // get position ID from transfer events
-  const { startingBlock, lpTokenAddress, positionId } = props;
+  const { startingBlock, lpTokenAddress } = props;
   const ethPrice = useGlobalState(state => state.nativeCurrencyPrice);
+  let positionId = BigInt(0);
+  // get position ID from transfer events
+
   const { data, error } = useScaffoldEventHistory({
     contractName: "FarmMainRegularMinStake",
     eventName: "Transfer",
@@ -44,10 +74,16 @@ const PositionManager = (props: pMProps) => {
     filters: { from: address },
   });
 
+  //
   // TODO: GET position id from transfer events
+  // note: a user can have multiple ids -> store them in array
 
-  const publicClient = usePublicClient()
-
+  if (data) {
+    positionId = data[0].args["positionId"]
+    console.log(data)
+  }
+  // NOTE: Using both getContract and useContractRead to get pool information is a bit redundant. should delete one of them
+  //
   const poolContract = getContract(
     {
       address: lpTokenAddress,
@@ -61,46 +97,17 @@ const PositionManager = (props: pMProps) => {
     publicClient
   })
 
-  const result = useContractRead({
+  const slotResult = useContractRead({
     address: poolContract.address,
     functionName: "slot0",
     args: [],
     abi: poolContract.abi,
   })
 
-  // Example function call
-  // Mapping result to the TypeScript interface
-  // TODO: Fix types on contract to avoid error here
-  const mappedResult: Slot0ReturnType = {
-    sqrtPriceX96: result.data ? result.data[0] as number : 0,
-    tick: result.data ? result.data[1] as number : 0,
-    observationIndex: result.data ? result.data[2] as number : 0,
-    observationCardinality: result.data ? result.data[3] as number : 0,
-    observationCardinalityNext: result.data ? result.data[4] as number : 0,
-    feeProtocol: result.data ? result.data[5] as number : 0,
-    unlocked: result.data ? result.data[6] as boolean : false,
-  };
-  console.log("mappedResult", mappedResult)
-
-  //TODO: 1) get LP token information [done]
-  //           -- TOken address + user balance <---- 
-  //           -- display user balannce
-  //           -- functions:
-  //           handleAMmountChange{
-  //           -- get price of ether
-  //           -- determine price of token using pool information 
-  //           -- change ammound based on price
-  //           }
-  //            handleApprove{
-  //            check approval status
-  //            run approvals for missing tokens
-  //            }
-  //
-  // read position data from contract
   const { data: positionData, isFetching: positionIsFetching, error: positionError } = useScaffoldContractRead({
     contractName: "FarmMainRegularMinStake",
     functionName: "position",
-    args: [BigInt(positionId)],
+    args: [positionId],
   });
 
   const tokenId = positionData?.tokenId;
@@ -111,6 +118,22 @@ const PositionManager = (props: pMProps) => {
     args: [{ tokenId: BigInt(tokenId ? tokenId : -1) }],
     abi: positionManagerContract.abi,
   })
+
+  // Example function call
+  // Mapping result to the TypeScript interface
+  // TODO: Fix types on contract to avoid error here
+  const mappedResult: Slot0ReturnType = {
+    sqrtPriceX96: slotResult.data ? slotResult.data[0] as number : 0,
+    tick: slotResult.data ? slotResult.data[1] as number : 0,
+    observationIndex: slotResult.data ? slotResult.data[2] as number : 0,
+    observationCardinality: slotResult.data ? slotResult.data[3] as number : 0,
+    observationCardinalityNext: slotResult.data ? slotResult.data[4] as number : 0,
+    feeProtocol: slotResult.data ? slotResult.data[5] as number : 0,
+    unlocked: slotResult.data ? slotResult.data[6] as boolean : false,
+  };
+  console.log("mappedResult", mappedResult)
+
+
   return (
     <div>
       <h1>Position Manager{isConnected && address ? ` for ${address}` : ""}</h1>
