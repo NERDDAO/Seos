@@ -1,11 +1,25 @@
-import { useAccount, usePublicClient, useContractRead } from "wagmi";
-import { useScaffoldEventHistory, useScaffoldContractRead } from "~~/hooks/scaffold-eth";
-import { useGlobalState } from "~~/services/store/store";
-import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json'
-import INonfungiblePositionManager from '@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json'
+import { } from "@uniswap/sdk-core";
+import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
+import INonfungiblePositionManager from '@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json';
+import { } from "@uniswap/v3-sdk";
 import { getContract } from "viem";
-import { } from "@uniswap/v3-sdk"
-import { } from "@uniswap/sdk-core"
+import { useAccount, useContractRead, usePublicClient, useBalance } from "wagmi";
+import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory } from "~~/hooks/scaffold-eth";
+import { useGlobalState } from "~~/services/store/store";
+
+//TODO: 0) get LP token information [done]
+//           -- TOken address + user balance <---- 
+//           -- display user balannce
+//           -- functions:
+//           handleAMmountChange{
+//           -- get price of ether
+//           -- determine price of token using pool information 
+//           -- change ammound based on price
+//           }
+//            handleApprove{
+//            check approval status
+//            run approvals for missing tokens
+//            }
 
 type pMProps = {
   startingBlock: number;
@@ -14,7 +28,7 @@ type pMProps = {
 
 type Slot0ReturnType = {
   sqrtPriceX96: number | number[];
-  tick: number;
+  tick: number,
   observationIndex: number;
   observationCardinality: number;
   observationCardinalityNext: number;
@@ -30,60 +44,21 @@ type addLiquidityArgs = {
   address: string;
 
 }
-//DEV NOTE::
-//Logic for position manager component: 
-// 1) get position id from transfer events
-// 2) get pool information from lpTokenAddres
-// 3b) get token balances from user address
-// 3) get position information from position ids
-// 4) display position information
-//
-//
-//TODO: 
-//1) Smart contract queries
-//- get position id from transfer events[x]
-//- get pool information from lpTokenAddress[x]
-//- get token balances from user address[ ]
-//- get position information from position ids[ ]
-//2) UI inputs
-//3) UI display
-//           -- functions:
-//           handleAMmountChange{
-//           -- get price of ether
-//           -- determine price of token using pool information 
-//           -- change ammound based on price
-//           }
-//            handleApprove{
-//            check approval status
-//            run approvals for missing tokens
-//            }
-//
+
 const PositionManager = (props: pMProps) => {
-  // chain setup
+
   const publicClient = usePublicClient()
   const { address, isConnected } = useAccount();
+  // get position ID from transfer events
   const { startingBlock, lpTokenAddress } = props;
   const ethPrice = useGlobalState(state => state.nativeCurrencyPrice);
-  let positionId = BigInt(0);
-  // get position ID from transfer events
 
-  const { data, error } = useScaffoldEventHistory({
-    contractName: "FarmMainRegularMinStake",
-    eventName: "Transfer",
-    fromBlock: BigInt(startingBlock),
-    filters: { from: address },
-  });
+  const vbtc = "0xe1406825186d63980fd6e2ec61888f7b91c4bae4"
+  // TODO: Get ussr balances
 
-  //
-  // TODO: GET position id from transfer events
-  // note: a user can have multiple ids -> store them in array
+  const testBalance = useBalance({ address: address, token: vbtc });
+  console.log("user balance", testBalance, address, lpTokenAddress)
 
-  if (data) {
-    positionId = data[0].args["positionId"]
-    console.log(data)
-  }
-  // NOTE: Using both getContract and useContractRead to get pool information is a bit redundant. should delete one of them
-  //
   const poolContract = getContract(
     {
       address: lpTokenAddress,
@@ -97,7 +72,22 @@ const PositionManager = (props: pMProps) => {
     publicClient
   })
 
-  const slotResult = useContractRead({
+  const { data, error } = useScaffoldEventHistory({
+    contractName: "FarmMainRegularMinStake",
+    eventName: "Transfer",
+    fromBlock: BigInt(startingBlock),
+    filters: { from: address },
+  });
+
+  // TODO: GET position id from transfer events
+
+  let positionId = BigInt(0);
+  if (data) {
+    positionId = data[0]
+    console.log(data)
+  }
+
+  const sl0tResult = useContractRead({
     address: poolContract.address,
     functionName: "slot0",
     args: [],
@@ -123,13 +113,13 @@ const PositionManager = (props: pMProps) => {
   // Mapping result to the TypeScript interface
   // TODO: Fix types on contract to avoid error here
   const mappedResult: Slot0ReturnType = {
-    sqrtPriceX96: slotResult.data ? slotResult.data[0] as number : 0,
-    tick: slotResult.data ? slotResult.data[1] as number : 0,
-    observationIndex: slotResult.data ? slotResult.data[2] as number : 0,
-    observationCardinality: slotResult.data ? slotResult.data[3] as number : 0,
-    observationCardinalityNext: slotResult.data ? slotResult.data[4] as number : 0,
-    feeProtocol: slotResult.data ? slotResult.data[5] as number : 0,
-    unlocked: slotResult.data ? slotResult.data[6] as boolean : false,
+    sqrtPriceX96: sl0tResult.data ? sl0tResult.data[0] as number : 0,
+    tick: sl0tResult.data ? sl0tResult.data[1] as number : 0,
+    observationIndex: sl0tResult.data ? sl0tResult.data[2] as number : 0,
+    observationCardinality: sl0tResult.data ? sl0tResult.data[3] as number : 0,
+    observationCardinalityNext: sl0tResult.data ? sl0tResult.data[4] as number : 0,
+    feeProtocol: sl0tResult.data ? sl0tResult.data[5] as number : 0,
+    unlocked: sl0tResult.data ? sl0tResult.data[6] as boolean : false,
   };
   console.log("mappedResult", mappedResult)
 
