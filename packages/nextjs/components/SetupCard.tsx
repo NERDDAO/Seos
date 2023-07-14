@@ -12,9 +12,9 @@ type namedDataType = {
   startBlock: string;
   rewardPerBlock: string;
   totalSupply: string;
-  involvingEth: string;
+  involvingEth: boolean;
   lpTokenAddress: `0x${string}`;
-  MainToken: string;
+  MainToken: `0x${string}`;
   tickLower: string;
   tickUpper: string;
 };
@@ -54,9 +54,9 @@ const SetupCard = (props: SetupType) => {
     startBlock: "",
     rewardPerBlock: "",
     totalSupply: "",
-    involvingEth: "",
+    involvingEth: true,
     lpTokenAddress: "0x0",
-    MainToken: "",
+    MainToken: "0x0",
     tickLower: "",
     tickUpper: "",
   };
@@ -71,7 +71,7 @@ const SetupCard = (props: SetupType) => {
       rewardPerBlock: data[0].rewardPerBlock ? BigInt(data[0].rewardPerBlock).toString() : "",
       totalSupply: data[0].totalSupply ? BigInt(data[0].totalSupply).toString() : "",
       //handle boolean type: there's  prob better way to do this
-      involvingEth: data[1].involvingETH === true ? "true" : data[1].involvingETH === false ? "false" : "undef",
+      involvingEth: data[1].involvingETH ? data[1].involvingEth : true,
       lpTokenAddress: data[1].liquidityPoolTokenAddress ? data[1].liquidityPoolTokenAddress : "",
       MainToken: data[1].mainTokenAddress ? data[1].mainTokenAddress : "",
       tickLower: data[1].tickLower ? data[1].tickLower : "",
@@ -98,7 +98,12 @@ const SetupCard = (props: SetupType) => {
               ))}
             </TableBody>
           )}
-      <PositionManager startingBlock={startingBlock} lpTokenAddress={namedData["lpTokenAddress"]} />
+      <PositionManager
+        startingBlock={startingBlock}
+        lpTokenAddress={namedData["lpTokenAddress"]}
+        involvingETH={namedData.involvingEth}
+        mainToken={namedData.MainToken}
+      />
     </Card>
   );
 };

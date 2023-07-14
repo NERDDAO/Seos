@@ -24,6 +24,8 @@ import { useGlobalState } from "~~/services/store/store";
 type pMProps = {
   startingBlock: number;
   lpTokenAddress: `0x${string}`;
+  mainToken: `0x${string}`;
+  involvingETH: boolean;
 };
 
 type Slot0ReturnType = {
@@ -50,66 +52,42 @@ const PositionManager = (props: pMProps) => {
   const publicClient = usePublicClient()
   const { address, isConnected } = useAccount();
   // get position ID from transfer events
-  const { startingBlock, lpTokenAddress } = props;
+  const { startingBlock, lpTokenAddress, mainToken, involvingETH } = props;
   const ethPrice = useGlobalState(state => state.nativeCurrencyPrice);
-
-  const vbtc = "0xe1406825186d63980fd6e2ec61888f7b91c4bae4"
-  // TODO: Get ussr balances
-
-  const testBalance = useBalance({ address: address, token: vbtc });
-  console.log("user balance", testBalance, address, lpTokenAddress)
-
-  const poolContract = getContract(
-    {
-      address: lpTokenAddress,
-      abi: IUniswapV3PoolABI.abi,
-      publicClient
-    })
-
-  const positionManagerContract = getContract({
-    address: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
-    abi: INonfungiblePositionManager.abi,
-    publicClient
-  })
-
-  const { data, error } = useScaffoldEventHistory({
+  let positionId = BigInt(0);
+  const userAddress = address as string;
+  const { data: tranferData, error } = useScaffoldEventHistory({
     contractName: "FarmMainRegularMinStake",
     eventName: "Transfer",
     fromBlock: BigInt(startingBlock),
     filters: { from: address },
   });
+  // TODO: map different position id from transfer events
 
-  // TODO: GET position id from transfer events
+  if (tranferData && tranferData.length > 0) {
+    positionId = BigInt(tranferData[0].args.positionId);
 
-  let positionId = BigInt(0);
-  if (data) {
-    positionId = data[0]
-    console.log(data)
   }
 
+  const poolContract = {
+    address: lpTokenAddress,
+    abi: IUniswapV3PoolABI.abi,
+    publicClient
+  }
+  const positionManagerContract = {
+    address: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
+    abi: INonfungiblePositionManager.abi,
+    publicClient
+  }
+
+  //QUERY THE CHAIN
   const sl0tResult = useContractRead({
     address: poolContract.address,
     functionName: "slot0",
     args: [],
     abi: poolContract.abi,
-  })
-
-  const { data: positionData, isFetching: positionIsFetching, error: positionError } = useScaffoldContractRead({
-    contractName: "FarmMainRegularMinStake",
-    functionName: "position",
-    args: [positionId],
   });
 
-  const tokenId = positionData?.tokenId;
-
-  const position = useContractRead({
-    address: positionManagerContract.address,
-    functionName: "positions",
-    args: [{ tokenId: BigInt(tokenId ? tokenId : -1) }],
-    abi: positionManagerContract.abi,
-  })
-
-  // Example function call
   // Mapping result to the TypeScript interface
   // TODO: Fix types on contract to avoid error here
   const mappedResult: Slot0ReturnType = {
@@ -121,9 +99,39 @@ const PositionManager = (props: pMProps) => {
     feeProtocol: sl0tResult.data ? sl0tResult.data[5] as number : 0,
     unlocked: sl0tResult.data ? sl0tResult.data[6] as boolean : false,
   };
-  console.log("mappedResult", mappedResult)
 
 
+  // BALANCE CHECK 
+  let mainTokenBalance: number | null = 0;
+  const TokenBalance = useBalance({ address: address, token: mainToken });
+  if (TokenBalance) {
+    mainTokenBalance = Number(TokenBalance.data?.value)
+  }
+
+  // TODO: Hanle pools that do not have ETH
+
+  let userBalance: number | null = 0;
+  const ethBalance = useAccountBalance(
+    userAddress);
+  if (involvingETH === true) {
+
+    userBalance = ethBalance.balance;
+
+  }
+  // POSITION DATA
+  const { data: positionData, isFetching: positionIsFetching, error: positionError } = useScaffoldContractRead({
+    contractName: "FarmMainRegularMinStake",
+    functionName: "position",
+    args: [positionId],
+  });
+
+  // Example function call
+
+  ///CONSOLE LOGGING---------------------------------------------
+  console.log("user balance 👨:", mainTokenBalance, address, lpTokenAddress)
+  console.log("mappedResult 🦖: ", mappedResult)
+  console.log("position🐝", positionData)
+  console.log(tranferData, "🐮transfer data")
   return (
     <div>
       <h1>Position Manager{isConnected && address ? ` for ${address}` : ""}</h1>
@@ -141,23 +149,4 @@ const PositionManager = (props: pMProps) => {
     </div>
   );
 };
-// const { positionId, position, pendingReward, pool } = props;
-//
-// //parse pending reward into number with 18 decimals
-//
-// const liquidityPool = pool.data ? pool.data.liquidity.toString() : "notFound";
-//
-// const parsedPendingReward = pendingReward.data ? ethers.utils.formatUnits(pendingReward.data, 18) : "notFound";
-//
-// console.log("POSITIONMANAGER", positionId, position);
-//
-// // Result: ["0x69eF61AFc3AA356e1ac97347119d75cBdAbEF534", 1, 16969625, 481551, 0]
-// //   {
-// //     "components": [
-// //       { "internalType": "address", "name": "uniqueOwner", "type": "address" },
-// //       { "internalType": "uint256", "name": "setupIndex", "type": "uint256" },
-// //       { "internalType": "uint256", "name": "creationBlock", "type": "uint256" },
-// //       { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
-// //       { "internalType": "uint256", "name": "rewa ffrd", "type": "uint256" }
-
 export default PositionManager;

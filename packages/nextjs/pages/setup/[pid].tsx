@@ -1,4 +1,3 @@
-import ToDo from "~~/components/NerdTodo";
 
 import SetupCard from "~~/components/SetupCard";
 import { useGlobalState } from "~~/services/store/store";
@@ -13,7 +12,6 @@ export default function SetupPage() {
       <div className="flex flex-col items-center justify-center min-h-screen py-2">
         <div className="text-2xl font-bold text-center align-middle mb-4">
           Setup #{pid?.toString()}
-          <ToDo />
         </div>
         <div className="text-2xl font-bold text-center align-middle mb-4">
           Setup Info
@@ -48,7 +46,6 @@ export default function SetupPage() {
           -add/Remove position button
           */}
           <SetupCard pid={pid} />
-
         </div>
       </div>
     </div>
