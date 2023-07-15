@@ -45,9 +45,11 @@ export default function SetupPage() {
           -Claim button
           -add/Remove position button
           */}
+
           <SetupCard pid={pid} />
         </div>
       </div>
     </div>
   );
+
 }

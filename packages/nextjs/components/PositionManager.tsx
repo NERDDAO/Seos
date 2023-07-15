@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react";
 import { } from "@uniswap/sdk-core";
+import QuoterV2 from '@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json'
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import INonfungiblePositionManager from '@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json';
 import { } from "@uniswap/v3-sdk";
-import { getContract } from "viem";
+import * as viem from "viem";
 import { useAccount, useContractRead, usePublicClient, useBalance } from "wagmi";
 import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory } from "~~/hooks/scaffold-eth";
 import { useGlobalState } from "~~/services/store/store";
@@ -48,7 +50,7 @@ type addLiquidityArgs = {
 }
 
 const PositionManager = (props: pMProps) => {
-
+  const [amounts, setAmounts] = useState({ amount0: 0, amount1: 0 });
   const publicClient = usePublicClient()
   const { address, isConnected } = useAccount();
   // get position ID from transfer events
@@ -66,7 +68,6 @@ const PositionManager = (props: pMProps) => {
 
   if (tranferData && tranferData.length > 0) {
     positionId = BigInt(tranferData[0].args.positionId);
-
   }
 
   const poolContract = {
@@ -118,20 +119,38 @@ const PositionManager = (props: pMProps) => {
     userBalance = ethBalance.balance;
 
   }
-  // POSITION DATA
-  const { data: positionData, isFetching: positionIsFetching, error: positionError } = useScaffoldContractRead({
-    contractName: "FarmMainRegularMinStake",
-    functionName: "position",
-    args: [positionId],
-  });
+  // CONVERT SLOT0 TICK TO PRICE  FOR tokens
 
-  // Example function call
+  function TickToPrice(tick: number, token0Decimals: number, token1Decimals: number) {
+    let price0 = (1.0001 ** tick) / (10 ** (token1Decimals - token0Decimals));
+    let price1 = 1 / price0;
+    return [price0.toFixed(token1Decimals), price1.toFixed(token0Decimals)]
+  }
 
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, slot: "slot0" | "slot1") => {
+    const newAmount = Number(e.target.value)
+    let calculatedAmount = 0;
+    if (slot === "slot0") { calculatedAmount = newAmount * ethPrice }
+    else { calculatedAmount = newAmount / ethPrice }
+    setAmounts({ amount0: calculatedAmount, amount1: newAmount });
+  };
+
+
+  function handleAmmountChange() {
+
+  };
+
+  function handleApprove() { };
+  function handleAddLiquidity() { };
+  function handleRemoveLiquidity() { };
+  function handleCollectFees() { };
   ///CONSOLE LOGGING---------------------------------------------
   console.log("user balance 👨:", mainTokenBalance, address, lpTokenAddress)
   console.log("mappedResult 🦖: ", mappedResult)
   console.log("position🐝", positionData)
   console.log(tranferData, "🐮transfer data")
+  ///-------------------------------------------------------------
   return (
     <div>
       <h1>Position Manager{isConnected && address ? ` for ${address}` : ""}</h1>
@@ -139,11 +158,12 @@ const PositionManager = (props: pMProps) => {
       <form>
         <label>
           Ammount 1:
-          <input type="text" name="positionId" />
+          <input type="text" name="positionId" defaultValue={amounts.amount0} />
         </label>
+        <br />
         <label>
           Ammount 2:
-          <input type="text" name="positionId" />
+          <input type="text" name="positionId" defaultValue={amounts.amount1} />
         </label>
       </form>
     </div>

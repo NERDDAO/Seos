@@ -1,3 +1,4 @@
+import * as React from "react";
 import { TableBody } from "@material-ui/core";
 import { Card, TableCell, TableRow } from "@mui/material";
 import { useScaffoldContractRead } from "~~/hooks/scaffold-eth/useScaffoldContractRead";
@@ -81,30 +82,36 @@ const SetupCard = (props: SetupType) => {
 
 
   return (
-    <Card className="flex flex-col text-left overflow-scroll p-5 m-5 w-196 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded overflow-X-scroll">
-      Setup #{props.pid}
-      Rewards Per Block:{" "}
-      {isFetching && !data
-        ? "Loading..."
-        : error
-          ? error.message
-          : data && (
-            <TableBody>
-              {Object.entries(variableNames).map(([key, value]) => (
-                <TableRow key={key}>
-                  {value}
-                  <TableCell>{namedData[key as keyof namedDataType]}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          )}
-      <PositionManager
-        startingBlock={startingBlock}
-        lpTokenAddress={namedData["lpTokenAddress"]}
-        involvingETH={namedData.involvingEth}
-        mainToken={namedData.MainToken}
-      />
-    </Card>
+    <React.Fragment>
+      <Card className="flex flex-col text-left overflow-scroll p-5 m-5 w-196 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded overflow-X-scroll">
+        Setup #{props.pid}
+        Rewards Per Block:{" "}
+        {isFetching && !data
+          ? "Loading..."
+          : error
+            ? error.message
+            : data && (
+              <TableBody>
+                {Object.entries(variableNames).map(([key, value]) => (
+                  <TableRow key={key}>
+                    {value}
+                    <TableCell>{namedData[key as keyof namedDataType]}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+      </Card>
+      <Card className="flex flex-col text-left overflow-scroll p-5 m-5 w-196 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded overflow-X-scroll">
+        <PositionManager
+          startingBlock={startingBlock}
+          lpTokenAddress={namedData["lpTokenAddress"]}
+          involvingETH={namedData.involvingEth}
+          mainToken={namedData.MainToken}
+
+        />
+      </Card>
+    </React.Fragment>
+
   );
 };
 
