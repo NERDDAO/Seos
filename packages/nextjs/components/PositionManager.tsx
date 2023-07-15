@@ -4,8 +4,7 @@ import QuoterV2 from '@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.so
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import INonfungiblePositionManager from '@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json';
 import { } from "@uniswap/v3-sdk";
-import * as viem from "viem";
-import { useAccount, useContractRead, usePublicClient, useBalance } from "wagmi";
+import { useAccount, useContractRead, usePublicClient, useBalance, erc20ABI } from "wagmi";
 import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory } from "~~/hooks/scaffold-eth";
 import { useGlobalState } from "~~/services/store/store";
 
@@ -54,10 +53,12 @@ const PositionManager = (props: pMProps) => {
   const publicClient = usePublicClient()
   const { address, isConnected } = useAccount();
   // get position ID from transfer events
-  const { startingBlock, lpTokenAddress, mainToken, involvingETH } = props;
   const ethPrice = useGlobalState(state => state.nativeCurrencyPrice);
   let positionId = BigInt(0);
   const userAddress = address as string;
+
+  const { startingBlock, lpTokenAddress, mainToken, involvingETH } = props;
+
   const { data: tranferData, error } = useScaffoldEventHistory({
     contractName: "FarmMainRegularMinStake",
     eventName: "Transfer",
@@ -69,26 +70,36 @@ const PositionManager = (props: pMProps) => {
   if (tranferData && tranferData.length > 0) {
     positionId = BigInt(tranferData[0].args.positionId);
   }
+  // Position QUERY
+  const positionQuery = useScaffoldContractRead({
+    contractName: "FarmMainRegularMinStake",
+    functionName: "position",
+    args: [positionId],
+  });
 
   const poolContract = {
     address: lpTokenAddress,
     abi: IUniswapV3PoolABI.abi,
     publicClient
   }
-  const positionManagerContract = {
-    address: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
-    abi: INonfungiblePositionManager.abi,
-    publicClient
+  // FETCH TOKEN DECIMALS
+  const ETHDECIMALS = 18;
+  let token0Decimals = 0
+  const tokenQuery = useContractRead({
+    address: mainToken,
+    functionName: "decimals",
+    abi: erc20ABI,
+  });
+  if (tokenQuery.data) {
+    token0Decimals = tokenQuery.data as number;
   }
-
-  //QUERY THE CHAIN
+  //QUERY THE POOL STATUS
   const sl0tResult = useContractRead({
     address: poolContract.address,
     functionName: "slot0",
     args: [],
     abi: poolContract.abi,
   });
-
   // Mapping result to the TypeScript interface
   // TODO: Fix types on contract to avoid error here
   const mappedResult: Slot0ReturnType = {
@@ -115,25 +126,22 @@ const PositionManager = (props: pMProps) => {
   const ethBalance = useAccountBalance(
     userAddress);
   if (involvingETH === true) {
-
     userBalance = ethBalance.balance;
-
   }
   // CONVERT SLOT0 TICK TO PRICE  FOR tokens
 
-  function TickToPrice(tick: number, token0Decimals: number, token1Decimals: number) {
-    let price0 = (1.0001 ** tick) / (10 ** (token1Decimals - token0Decimals));
-    let price1 = 1 / price0;
-    return [price0.toFixed(token1Decimals), price1.toFixed(token0Decimals)]
-  }
 
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, slot: "slot0" | "slot1") => {
-    const newAmount = Number(e.target.value)
-    let calculatedAmount = 0;
-    if (slot === "slot0") { calculatedAmount = newAmount * ethPrice }
-    else { calculatedAmount = newAmount / ethPrice }
-    setAmounts({ amount0: calculatedAmount, amount1: newAmount });
+    let input = Number(e.target.value)
+    const ttp = Number(mappedResult.sqrtPriceX96) ** 2 / 196 ** 2;
+    const calculatedAmount = input * ttp;
+    if (slot === "slot0") {
+      setAmounts({ amount0: input, amount1: calculatedAmount })
+    }
+    else {
+      setAmounts({ amount0: calculatedAmount, amount1: input })
+    }
   };
 
 
@@ -146,10 +154,13 @@ const PositionManager = (props: pMProps) => {
   function handleRemoveLiquidity() { };
   function handleCollectFees() { };
   ///CONSOLE LOGGING---------------------------------------------
+  console.log("eth balance 🐷:", ethBalance)
+  console.log("slot0 🐸:", sl0tResult)
   console.log("user balance 👨:", mainTokenBalance, address, lpTokenAddress)
   console.log("mappedResult 🦖: ", mappedResult)
-  console.log("position🐝", positionData)
+  console.log("position🐝", positionQuery)
   console.log(tranferData, "🐮transfer data")
+  console.log("Decimals", token0Decimals)
   ///-------------------------------------------------------------
   return (
     <div>
