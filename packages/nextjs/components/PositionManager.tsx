@@ -134,21 +134,18 @@ const PositionManager = (props: pMProps) => {
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, slot: "slot0" | "slot1") => {
     let input = Number(e.target.value)
-    const ttp = Number(mappedResult.sqrtPriceX96) ** 2 / 196 ** 2;
-    const calculatedAmount = input * ttp;
+    const ttp = Number(mappedResult.sqrtPriceX96) ** 2 / 2 ** 192;
     if (slot === "slot0") {
+
+      const calculatedAmount = input * ttp;
       setAmounts({ amount0: input, amount1: calculatedAmount })
     }
     else {
+
+      const calculatedAmount = input / ttp;
       setAmounts({ amount0: calculatedAmount, amount1: input })
     }
   };
-
-
-  function handleAmmountChange() {
-
-  };
-
   function handleApprove() { };
   function handleAddLiquidity() { };
   function handleRemoveLiquidity() { };
@@ -169,12 +166,15 @@ const PositionManager = (props: pMProps) => {
       <form>
         <label>
           Ammount 1:
-          <input type="text" name="positionId" defaultValue={amounts.amount0} />
+          <input type="text" name="positionId" value={amounts.amount0} onChange={
+            (e) => handleAmountChange(e, "slot0")
+          } />
         </label>
         <br />
         <label>
           Ammount 2:
-          <input type="text" name="positionId" defaultValue={amounts.amount1} />
+          <input type="text" name="positionId" value={amounts.amount1} onChange={
+            (e) => handleAmountChange(e, "slot1")} />
         </label>
       </form>
     </div>
