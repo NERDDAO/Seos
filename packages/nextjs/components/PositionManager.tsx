@@ -167,7 +167,16 @@ const PositionManager = (props: pMProps) => {
   })
   const { data, isLoading, isSuccess, write } = useContractWrite(config)
 
-
+  const handleClickApprove = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    event.preventDefault();
+    if (write) { // check if write is defined
+      write();
+    } else {
+      console.error("write function is not defined");
+    }
+  };
+  
+  
   // const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite({
   //   contracName: "FarmMainRegularMinStake",
   //   functionName: "addLiquidity", //or whatever the fuck its called
@@ -179,6 +188,12 @@ const PositionManager = (props: pMProps) => {
   //     address,
   //   ],
   // })
+
+  // const handleClickAddLiquidity = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  //   event.preventDefault();
+  //   writeLiquidity();
+  // };
+  
 
   function handleAddLiquidity() { };
   function handleRemoveLiquidity() { };
@@ -210,8 +225,8 @@ const PositionManager = (props: pMProps) => {
           <input type="text" name="positionId" value={amounts.amount1} onChange={
             (e) => handleAmountChange(e, "slot1")} />
         </label>
-        {/* <Button onClick={write}>Approve</Button>
-        <Button onClick={writeLiquidity}>Add Liquidity</Button> */}
+        <Button onClick={handleClickApprove}>Approve</Button>
+        {/* <Button onClick={handleClickAddLiquidity}>Add Liquidity</Button> */}
       </form>
     </div>
   );
