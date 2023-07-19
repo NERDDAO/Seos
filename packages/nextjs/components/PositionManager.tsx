@@ -4,10 +4,10 @@ import QuoterV2 from '@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.so
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import INonfungiblePositionManager from '@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json';
 import { } from "@uniswap/v3-sdk";
-import { useAccount, useContractRead, usePublicClient, useBalance, erc20ABI } from "wagmi";
+import { useAccount, useContractRead, useContractWrite, usePublicClient, useBalance, erc20ABI, usePrepareContractWrite } from "wagmi";
 import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory } from "~~/hooks/scaffold-eth";
 import { useGlobalState } from "~~/services/store/store";
-
+import { Button } from "@mui/material";
 //TODO: 0) get LP token information [done]
 //           -- TOken address + user balance <---- 
 //           -- display user balannce
@@ -146,7 +146,27 @@ const PositionManager = (props: pMProps) => {
       setAmounts({ amount0: calculatedAmount, amount1: input })
     }
   };
-  function handleApprove() { };
+
+  // TODO: Handle approval for tokens
+  const farmContractAddress = "0x8f5adC58b32D4e5Ca02EAC0E293D35855999436C"
+
+  let approvalArray = { token0ApprovedFor: BigInt, token1ApprovedFor: BigInt }
+
+
+  /*const tx = () => useContractWrite({
+    abi: erc20ABI,
+    address: mainToken,
+    functionName: "approve",
+    args: [lpTokenAddress, BigInt(amounts.amount0)],
+  }); */
+  const { config } = usePrepareContractWrite({
+    address: mainToken,
+    functionName: "approve",
+    args: [farmContractAddress, BigInt(amounts.amount0)],
+    abi: erc20ABI,
+  })
+  const { data, isLoading, isSuccess, write } = useContractWrite(config)
+
   function handleAddLiquidity() { };
   function handleRemoveLiquidity() { };
   function handleCollectFees() { };
@@ -159,6 +179,7 @@ const PositionManager = (props: pMProps) => {
   console.log(tranferData, "🐮transfer data")
   console.log("Decimals", token0Decimals)
   ///-------------------------------------------------------------
+
   return (
     <div>
       <h1>Position Manager{isConnected && address ? ` for ${address}` : ""}</h1>
@@ -176,6 +197,7 @@ const PositionManager = (props: pMProps) => {
           <input type="text" name="positionId" value={amounts.amount1} onChange={
             (e) => handleAmountChange(e, "slot1")} />
         </label>
+        <Button onClick={write}>Add Liquidity</Button>
       </form>
     </div>
   );
