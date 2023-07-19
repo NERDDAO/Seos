@@ -27,6 +27,7 @@ type pMProps = {
   lpTokenAddress: `0x${string}`;
   mainToken: `0x${string}`;
   involvingETH: boolean;
+  pid: number;
 };
 
 type Slot0ReturnType = {
@@ -57,7 +58,7 @@ const PositionManager = (props: pMProps) => {
   let positionId = BigInt(0);
   const userAddress = address as string;
 
-  const { startingBlock, lpTokenAddress, mainToken, involvingETH } = props;
+  const { startingBlock, lpTokenAddress, mainToken, involvingETH, pid } = props;
 
   const { data: tranferData, error } = useScaffoldEventHistory({
     contractName: "FarmMainRegularMinStake",
@@ -153,12 +154,6 @@ const PositionManager = (props: pMProps) => {
   let approvalArray = { token0ApprovedFor: BigInt, token1ApprovedFor: BigInt }
 
 
-  /*const tx = () => useContractWrite({
-    abi: erc20ABI,
-    address: mainToken,
-    functionName: "approve",
-    args: [lpTokenAddress, BigInt(amounts.amount0)],
-  }); */
   const { config } = usePrepareContractWrite({
     address: mainToken,
     functionName: "approve",
@@ -167,33 +162,36 @@ const PositionManager = (props: pMProps) => {
   })
   const { data, isLoading, isSuccess, write } = useContractWrite(config)
 
-  const handleClickApprove = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    event.preventDefault();
-    if (write) { // check if write is defined
+  const handleClickApprove = () => {
+    if (write && amounts.amount0 > 0) { // check if write is defined
       write();
     } else {
-      console.error("write function is not defined");
+      console.error("Enter an amount to approve");
     }
   };
-  
-  
-  // const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite({
-  //   contracName: "FarmMainRegularMinStake",
-  //   functionName: "addLiquidity", //or whatever the fuck its called
-  //   args: [
-  //     BigInt(amounts.amount0),
-  //     BigInt(amounts.amount1),
-  //     BigInt(amount0Min),
-  //     BigInt(amount1Min),
-  //     address,
-  //   ],
-  // })
+
+
+  const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite({
+    contractName: "FarmMainRegularMinStake",
+    functionName: "openPosition", //or whatever the fuck its called
+    args: [{
+      setupIndex: BigInt(pid),
+
+      amount0: BigInt(amounts.amount0),
+      amount1: BigInt(amounts.amount1),
+      positionOwner: address as string,
+      amount0Min: BigInt(amounts.amount0 ** 0.95),
+
+      amount1Min: BigInt(amounts.amount1 ** 0.95)
+    }
+    ],
+  })
 
   // const handleClickAddLiquidity = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
   //   event.preventDefault();
   //   writeLiquidity();
   // };
-  
+
 
   function handleAddLiquidity() { };
   function handleRemoveLiquidity() { };

@@ -107,6 +107,7 @@ const SetupCard = (props: SetupType) => {
           lpTokenAddress={namedData["lpTokenAddress"]}
           involvingETH={namedData.involvingEth}
           mainToken={namedData.MainToken}
+          pid={props.pid}
 
         />
       </Card>
