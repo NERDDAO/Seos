@@ -5,7 +5,7 @@ import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/I
 import INonfungiblePositionManager from '@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json';
 import { } from "@uniswap/v3-sdk";
 import { useAccount, useContractRead, useContractWrite, usePublicClient, useBalance, erc20ABI, usePrepareContractWrite } from "wagmi";
-import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory } from "~~/hooks/scaffold-eth";
+import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { useGlobalState } from "~~/services/store/store";
 import { Button } from "@mui/material";
 //TODO: 0) get LP token information [done]
@@ -167,6 +167,19 @@ const PositionManager = (props: pMProps) => {
   })
   const { data, isLoading, isSuccess, write } = useContractWrite(config)
 
+
+  // const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite({
+  //   contracName: "FarmMainRegularMinStake",
+  //   functionName: "addLiquidity", //or whatever the fuck its called
+  //   args: [
+  //     BigInt(amounts.amount0),
+  //     BigInt(amounts.amount1),
+  //     BigInt(amount0Min),
+  //     BigInt(amount1Min),
+  //     address,
+  //   ],
+  // })
+
   function handleAddLiquidity() { };
   function handleRemoveLiquidity() { };
   function handleCollectFees() { };
@@ -197,7 +210,8 @@ const PositionManager = (props: pMProps) => {
           <input type="text" name="positionId" value={amounts.amount1} onChange={
             (e) => handleAmountChange(e, "slot1")} />
         </label>
-        <Button onClick={write}>Add Liquidity</Button>
+        {/* <Button onClick={write}>Approve</Button>
+        <Button onClick={writeLiquidity}>Add Liquidity</Button> */}
       </form>
     </div>
   );
