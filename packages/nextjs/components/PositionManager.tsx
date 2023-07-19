@@ -177,22 +177,20 @@ const PositionManager = (props: pMProps) => {
       functionName: "openPosition", //or whatever the fuck its called
       args: [{
         setupIndex: BigInt(pid),
-
-        amount0: BigInt(amounts.amount0),
-        amount1: BigInt(amounts.amount1),
+        amount0: BigInt(Math.floor(amounts.amount0 * (10 ** 18))),
+        amount1: BigInt(Math.floor(amounts.amount1 * (10 ** 18))),
         positionOwner: address as string,
-        amount0Min: BigInt(amounts.amount0 ** 0.95),
-
-        amount1Min: BigInt(amounts.amount1 ** 0.95)
+        amount0Min: BigInt(Math.floor((amounts.amount0 ** 0.95) * (10 ** 18))),
+        amount1Min: BigInt(Math.floor((amounts.amount1 ** 0.95) * (10 ** 18))),
       }
       ],
       value: `${0}`
     })
 
-  // const handleClickAddLiquidity = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-  //   event.preventDefault();
-  //   writeLiquidity();
-  // };
+  const handleClickAddLiquidity = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    event.preventDefault();
+    writeLiquidity();
+  };
 
 
   function handleAddLiquidity() { };
@@ -226,7 +224,7 @@ const PositionManager = (props: pMProps) => {
             (e) => handleAmountChange(e, "slot1")} />
         </label>
         <Button onClick={handleClickApprove}>Approve</Button>
-        {/* <Button onClick={handleClickAddLiquidity}>Add Liquidity</Button> */}
+        <Button onClick={handleClickAddLiquidity}>Add Liquidity</Button>
       </form>
     </div>
   );
