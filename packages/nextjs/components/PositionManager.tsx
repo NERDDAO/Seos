@@ -171,21 +171,23 @@ const PositionManager = (props: pMProps) => {
   };
 
 
-  const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite({
-    contractName: "FarmMainRegularMinStake",
-    functionName: "openPosition", //or whatever the fuck its called
-    args: [{
-      setupIndex: BigInt(pid),
+  const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite(
+    {
+      contractName: "FarmMainRegularMinStake",
+      functionName: "openPosition", //or whatever the fuck its called
+      args: [{
+        setupIndex: BigInt(pid),
 
-      amount0: BigInt(amounts.amount0),
-      amount1: BigInt(amounts.amount1),
-      positionOwner: address as string,
-      amount0Min: BigInt(amounts.amount0 ** 0.95),
+        amount0: BigInt(amounts.amount0),
+        amount1: BigInt(amounts.amount1),
+        positionOwner: address as string,
+        amount0Min: BigInt(amounts.amount0 ** 0.95),
 
-      amount1Min: BigInt(amounts.amount1 ** 0.95)
-    }
-    ],
-  })
+        amount1Min: BigInt(amounts.amount1 ** 0.95)
+      }
+      ],
+      value: `${0}`
+    })
 
   // const handleClickAddLiquidity = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
   //   event.preventDefault();
