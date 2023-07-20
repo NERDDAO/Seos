@@ -187,13 +187,12 @@ const PositionManager = (props: pMProps) => {
       value: `${0}`
     })
 
-  const handleClickAddLiquidity = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    event.preventDefault();
-    writeLiquidity();
+  const handleClickAddLiquidity = () => {
+    if (amounts.amount0 > 0)
+      writeLiquidity();
   };
 
 
-  function handleAddLiquidity() { };
   function handleRemoveLiquidity() { };
   function handleCollectFees() { };
   ///CONSOLE LOGGING---------------------------------------------
