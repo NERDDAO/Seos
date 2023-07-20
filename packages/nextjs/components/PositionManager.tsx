@@ -170,6 +170,12 @@ const PositionManager = (props: pMProps) => {
     }
   };
 
+  /* TODO:
+  -> Make sure we're using the farmRegular contract
+  -> Make sure ammount 0 = OS and amount 1 = ETH
+  -> Check that amount <= than balance before sending tx
+  -> Check that approval >= balance before sending tx
+      */
 
   const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite(
     {
