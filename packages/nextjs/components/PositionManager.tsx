@@ -157,7 +157,7 @@ const PositionManager = (props: pMProps) => {
   const { config } = usePrepareContractWrite({
     address: mainToken,
     functionName: "approve",
-    args: [farmContractAddress, BigInt(amounts.amount0)],
+    args: [farmContractAddress, BigInt(Math.floor(amounts.amount0 * (10 ** 18)))],
     abi: erc20ABI,
   })
   const { data, isLoading, isSuccess, write } = useContractWrite(config)
@@ -171,6 +171,7 @@ const PositionManager = (props: pMProps) => {
   };
 
   /* TODO:
+  -> 
   -> Make sure we're using the farmRegular contract
   -> Make sure ammount 0 = OS and amount 1 = ETH
   -> Check that amount <= than balance before sending tx
