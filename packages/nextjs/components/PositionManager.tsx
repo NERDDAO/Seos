@@ -149,7 +149,7 @@ const PositionManager = (props: pMProps) => {
   };
 
   // TODO: Handle approval for tokens
-  const farmContractAddress = "0x8f5adC58b32D4e5Ca02EAC0E293D35855999436C"
+  const farmContractAddress = "0x129a261afAAe9Fc9AB9D5107e840560d052Cd97E"
 
   let approvalArray = { token0ApprovedFor: BigInt, token1ApprovedFor: BigInt }
 
@@ -159,6 +159,7 @@ const PositionManager = (props: pMProps) => {
     functionName: "approve",
     args: [farmContractAddress, BigInt(Math.floor(amounts.amount0 * (10 ** 18)))],
     abi: erc20ABI,
+
   })
   const { data, isLoading, isSuccess, write } = useContractWrite(config)
 
@@ -187,11 +188,11 @@ const PositionManager = (props: pMProps) => {
         amount0: BigInt(Math.floor(amounts.amount0 * (10 ** 18))),
         amount1: BigInt(Math.floor(amounts.amount1 * (10 ** 18))),
         positionOwner: address as string,
-        amount0Min: BigInt(Math.floor((amounts.amount0 ** 0.95) * (10 ** 18))),
-        amount1Min: BigInt(Math.floor((amounts.amount1 ** 0.95) * (10 ** 18))),
+        amount0Min: BigInt(Math.floor((amounts.amount0 * 0.95) * (10 ** 18))),
+        amount1Min: BigInt(Math.floor((amounts.amount1 * 0.95) * (10 ** 18))),
       }
       ],
-      value: `${0}`
+      value: `${amounts.amount1}`
     })
 
   const handleClickAddLiquidity = () => {
