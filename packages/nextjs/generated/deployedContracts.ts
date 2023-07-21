@@ -149,7 +149,7 @@ const contracts = {
 
         // Farming interface
         FarmMainRegularMinStake: {
-          address: "0x679780Ea3133C388E3c7efeb22e98a68Ccf99aFf",
+          address: "0x129a261afAAe9Fc9AB9D5107e840560d052Cd97E",
           abi: [
             {
               anonymous: false,
