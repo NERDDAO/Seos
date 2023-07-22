@@ -8,19 +8,6 @@ import { useAccount, useContractRead, useContractWrite, usePublicClient, useBala
 import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { useGlobalState } from "~~/services/store/store";
 import { Button } from "@mui/material";
-//TODO: 0) get LP token information [done]
-//           -- TOken address + user balance <---- 
-//           -- display user balannce
-//           -- functions:
-//           handleAMmountChange{
-//           -- get price of ether
-//           -- determine price of token using pool information 
-//           -- change ammound based on price
-//           }
-//            handleApprove{
-//            check approval status
-//            run approvals for missing tokens
-//            }
 
 type pMProps = {
   startingBlock: number;
@@ -115,7 +102,7 @@ const PositionManager = (props: pMProps) => {
 
 
   // BALANCE CHECK 
-  let mainTokenBalance: number | null = 0;
+  let mainTokenBalance: number = 0;
   const TokenBalance = useBalance({ address: address, token: mainToken });
   if (TokenBalance) {
     mainTokenBalance = Number(TokenBalance.data?.value)
@@ -123,10 +110,10 @@ const PositionManager = (props: pMProps) => {
 
   // TODO: Hanle pools that do not have ETH
 
-  let userBalance: number | null = 0;
+  let userBalance: number = 0;
   const ethBalance = useAccountBalance(
     userAddress);
-  if (involvingETH === true) {
+  if (involvingETH === true && ethBalance.balance) {
     userBalance = ethBalance.balance;
   }
   // CONVERT SLOT0 TICK TO PRICE  FOR tokens
@@ -134,6 +121,9 @@ const PositionManager = (props: pMProps) => {
 
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, slot: "slot0" | "slot1") => {
+    if (slot == "slot0" && Number(e.target.value) > mainTokenBalance || slot == "slot1" && Number(e.target.value) > userBalance) {
+      return console.log("insufficient funds");
+    }
     let input = Number(e.target.value)
     const ttp = Number(mappedResult.sqrtPriceX96) ** 2 / 2 ** 192;
     if (slot === "slot0") {
@@ -182,7 +172,7 @@ const PositionManager = (props: pMProps) => {
   const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite(
     {
       contractName: "FarmMainRegularMinStake",
-      functionName: "openPosition", //or whatever the fuck its called
+      functionName: "openPosition",//or whatever the fuck its called
       args: [{
         setupIndex: BigInt(pid),
         amount0: BigInt(Math.floor(amounts.amount0 * (10 ** 18))),
@@ -191,13 +181,36 @@ const PositionManager = (props: pMProps) => {
         amount0Min: BigInt(Math.floor((amounts.amount0 * 0.95) * (10 ** 18))),
         amount1Min: BigInt(Math.floor((amounts.amount1 * 0.95) * (10 ** 18))),
       }
-      ],
+      ]
+      ,
+      value: `${amounts.amount1}`
+    })
+  const { data: addData, isLoading: addLoading, isSuccess: isAddSuccess, write: addWrite } = useScaffoldContractWrite(
+    {
+      contractName: "FarmMainRegularMinStake",
+      functionName: "addLiquidity",//or whatever the fuck its called
+      args: [
+        positionId,
+        {
+          setupIndex: BigInt(pid),
+          amount0: BigInt(Math.floor(amounts.amount0 * (10 ** 18))),
+          amount1: BigInt(Math.floor(amounts.amount1 * (10 ** 18))),
+          positionOwner: address as string,
+          amount0Min: BigInt(Math.floor((amounts.amount0 * 0.95) * (10 ** 18))),
+          amount1Min: BigInt(Math.floor((amounts.amount1 * 0.95) * (10 ** 18))),
+        }
+      ]
+      ,
       value: `${amounts.amount1}`
     })
 
+
+
+  // Liquidity add function picker
   const handleClickAddLiquidity = () => {
-    if (amounts.amount0 > 0)
-      writeLiquidity();
+    if (positionId !== BigInt(0))
+      addWrite
+    else writeLiquidity
   };
 
 
