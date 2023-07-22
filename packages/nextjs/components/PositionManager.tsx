@@ -124,9 +124,7 @@ const PositionManager = (props: pMProps) => {
   }
   // CONVERT SLOT0 TICK TO PRICE  FOR tokens
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, slot: "slot0" | "slot1") => {
-    if (slot == "slot0" && Number(e.target.value) > mainTokenBalance || slot == "slot1" && Number(e.target.value) > userBalance) {
-      return console.log("insufficient funds");
-    }
+
     let input = Number.parseFloat(e.target.value);
     let bigInput = BigInt(input * 10 ** token0Decimals);
     let amount0Min = BigInt(0);
@@ -139,18 +137,18 @@ const PositionManager = (props: pMProps) => {
 
     if (slot === "slot0") {
 
-      calculatedAmount = BigInt(input * ttp * 10 ** ETHDECIMALS);
+      calculatedAmount = BigInt(Math.floor(input * ttp * 10 ** ETHDECIMALS));
 
-      amount0Min = BigInt(input * slippage * 10 ** token0Decimals);
+      amount0Min = BigInt(Math.floor(input * slippage * 10 ** token0Decimals));
 
-      amount1Min = BigInt(input * ttp * slippage * 10 ** ETHDECIMALS);
+      amount1Min = BigInt(Math.floor(input * ttp * slippage * 10 ** ETHDECIMALS));
       setAmounts({ float0: input, float1: input * ttp, amount0: bigInput, amount0Min: amount0Min, amount1: calculatedAmount, amount1Min: amount1Min })
     }
-    else {
-      bigInput = BigInt(input * 10 ** ETHDECIMALS);
-      calculatedAmount = BigInt(input * 1 / ttp * 10 ** token0Decimals);
-      amount0Min = BigInt(input * ttp * slippage * 10 ** token0Decimals);
-      amount1Min = BigInt(input * 1 / ttp * slippage * 10 ** ETHDECIMALS);
+    else if (slot === "slot1") {
+      bigInput = BigInt(Math.floor(input * 10 ** ETHDECIMALS));
+      calculatedAmount = BigInt(Math.floor(input * 1 / ttp * 10 ** token0Decimals));
+      amount0Min = BigInt(Math.floor(input * ttp * slippage * 10 ** token0Decimals));
+      amount1Min = BigInt(Math.floor(input * 1 / ttp * slippage * 10 ** ETHDECIMALS));
       setAmounts({ float0: input * 1 / ttp, float1: input, amount0: calculatedAmount, amount1: bigInput, amount0Min: amount0Min, amount1Min: amount1Min })
     }
   };
