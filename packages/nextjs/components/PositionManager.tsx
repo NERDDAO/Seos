@@ -37,7 +37,7 @@ type addLiquidityArgs = {
 }
 
 const PositionManager = (props: pMProps) => {
-  const [amounts, setAmounts] = useState({ amount0: 0, amount1: 0 });
+  const [amounts, setAmounts] = useState({ float0: 0, float1: 0, amount0: 0n, amount1: 0n, amount0Min: 0n, amount1Min: 0n });
   const publicClient = usePublicClient()
   const { address, isConnected } = useAccount();
   // get position ID from transfer events
@@ -47,17 +47,22 @@ const PositionManager = (props: pMProps) => {
 
   const { startingBlock, lpTokenAddress, mainToken, involvingETH, pid } = props;
 
-  const { data: tranferData, error } = useScaffoldEventHistory({
+  const { data: transferData, error } = useScaffoldEventHistory({
     contractName: "FarmMainRegularMinStake",
     eventName: "Transfer",
     fromBlock: BigInt(startingBlock),
     filters: { from: address },
   });
   // TODO: map different position id from transfer events
-
-  if (tranferData && tranferData.length > 0) {
-    positionId = BigInt(tranferData[0].args.positionId);
-  }
+  useEffect(() => {
+    const filteredData = transferData?.filter((event) => event.args.from !== address);
+    console.log(filteredData, "IM RACING HAMSTERS");
+    positionId = BigInt(0);
+    if (transferData && transferData.length > 0) {
+      positionId = BigInt(transferData[0].args.positionId);
+      console.log(positionId, "positionId");
+    }
+  }, [transferData, address]);
   // Position QUERY
   const positionQuery = useScaffoldContractRead({
     contractName: "FarmMainRegularMinStake",
@@ -88,6 +93,7 @@ const PositionManager = (props: pMProps) => {
     args: [],
     abi: poolContract.abi,
   });
+
   // Mapping result to the TypeScript interface
   // TODO: Fix types on contract to avoid error here
   const mappedResult: Slot0ReturnType = {
@@ -117,24 +123,35 @@ const PositionManager = (props: pMProps) => {
     userBalance = ethBalance.balance;
   }
   // CONVERT SLOT0 TICK TO PRICE  FOR tokens
-
-
-
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, slot: "slot0" | "slot1") => {
     if (slot == "slot0" && Number(e.target.value) > mainTokenBalance || slot == "slot1" && Number(e.target.value) > userBalance) {
       return console.log("insufficient funds");
     }
-    let input = Number(e.target.value)
+    let input = Number.parseFloat(e.target.value);
+    let bigInput = BigInt(input * 10 ** token0Decimals);
+    let amount0Min = BigInt(0);
+    let amount1Min = BigInt(0);
+    let calculatedAmount = BigInt(0);
+    const slippage: number = 0.95
+    console.log(input);
+
     const ttp = Number(mappedResult.sqrtPriceX96) ** 2 / 2 ** 192;
+
     if (slot === "slot0") {
 
-      const calculatedAmount = input * ttp;
-      setAmounts({ amount0: input, amount1: calculatedAmount })
+      calculatedAmount = BigInt(input * ttp * 10 ** ETHDECIMALS);
+
+      amount0Min = BigInt(input * slippage * 10 ** token0Decimals);
+
+      amount1Min = BigInt(input * ttp * slippage * 10 ** ETHDECIMALS);
+      setAmounts({ float0: input, float1: input * ttp, amount0: bigInput, amount0Min: amount0Min, amount1: calculatedAmount, amount1Min: amount1Min })
     }
     else {
-
-      const calculatedAmount = input / ttp;
-      setAmounts({ amount0: calculatedAmount, amount1: input })
+      bigInput = BigInt(input * 10 ** ETHDECIMALS);
+      calculatedAmount = BigInt(input * 1 / ttp * 10 ** token0Decimals);
+      amount0Min = BigInt(input * ttp * slippage * 10 ** token0Decimals);
+      amount1Min = BigInt(input * 1 / ttp * slippage * 10 ** ETHDECIMALS);
+      setAmounts({ float0: input * 1 / ttp, float1: input, amount0: calculatedAmount, amount1: bigInput, amount0Min: amount0Min, amount1Min: amount1Min })
     }
   };
 
@@ -147,7 +164,7 @@ const PositionManager = (props: pMProps) => {
   const { config } = usePrepareContractWrite({
     address: mainToken,
     functionName: "approve",
-    args: [farmContractAddress, BigInt(Math.floor(amounts.amount0 * (10 ** 18)))],
+    args: [farmContractAddress, amounts.amount0],
     abi: erc20ABI,
 
   })
@@ -160,30 +177,21 @@ const PositionManager = (props: pMProps) => {
       console.error("Enter an amount to approve");
     }
   };
-
-  /* TODO:
-  -> 
-  -> Make sure we're using the farmRegular contract
-  -> Make sure ammount 0 = OS and amount 1 = ETH
-  -> Check that amount <= than balance before sending tx
-  -> Check that approval >= balance before sending tx
-      */
-
   const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite(
     {
       contractName: "FarmMainRegularMinStake",
       functionName: "openPosition",//or whatever the fuck its called
       args: [{
         setupIndex: BigInt(pid),
-        amount0: BigInt(Math.floor(amounts.amount0 * (10 ** 18))),
-        amount1: BigInt(Math.floor(amounts.amount1 * (10 ** 18))),
+        amount0: amounts.amount0,
+        amount1: amounts.amount1,
         positionOwner: address as string,
-        amount0Min: BigInt(Math.floor((amounts.amount0 * 0.95) * (10 ** 18))),
-        amount1Min: BigInt(Math.floor((amounts.amount1 * 0.95) * (10 ** 18))),
+        amount0Min: amounts.amount0Min,
+        amount1Min: amounts.amount1Min,
       }
       ]
       ,
-      value: `${amounts.amount1}`
+      value: `${Number(amounts.float1.toFixed(18))}`
     })
   const { data: addData, isLoading: addLoading, isSuccess: isAddSuccess, write: addWrite } = useScaffoldContractWrite(
     {
@@ -193,24 +201,22 @@ const PositionManager = (props: pMProps) => {
         positionId,
         {
           setupIndex: BigInt(pid),
-          amount0: BigInt(Math.floor(amounts.amount0 * (10 ** 18))),
-          amount1: BigInt(Math.floor(amounts.amount1 * (10 ** 18))),
+          amount0: amounts.amount0,
+          amount1: amounts.amount1,
+
           positionOwner: address as string,
-          amount0Min: BigInt(Math.floor((amounts.amount0 * 0.95) * (10 ** 18))),
-          amount1Min: BigInt(Math.floor((amounts.amount1 * 0.95) * (10 ** 18))),
+          amount0Min: amounts.amount0Min,
+          amount1Min: amounts.amount1Min,
         }
       ]
       ,
-      value: `${amounts.amount1}`
+      value: `${Number(amounts.float1.toFixed(18))}`
     })
-
-
-
   // Liquidity add function picker
   const handleClickAddLiquidity = () => {
     if (positionId !== BigInt(0))
-      addWrite
-    else writeLiquidity
+      addWrite()
+    else writeLiquidity()
   };
 
 
@@ -222,7 +228,7 @@ const PositionManager = (props: pMProps) => {
   console.log("user balance 👨:", mainTokenBalance, address, lpTokenAddress)
   console.log("mappedResult 🦖: ", mappedResult)
   console.log("position🐝", positionQuery)
-  console.log(tranferData, "🐮transfer data")
+  console.log(transferData, "🐮transfer data")
   console.log("Decimals", token0Decimals)
   ///-------------------------------------------------------------
 
@@ -233,14 +239,14 @@ const PositionManager = (props: pMProps) => {
       <form>
         <label>
           Ammount 1:
-          <input type="text" name="positionId" value={amounts.amount0} onChange={
+          <input type="number" name="positionId" value={amounts.float0} onChange={
             (e) => handleAmountChange(e, "slot0")
           } />
         </label>
         <br />
         <label>
           Ammount 2:
-          <input type="text" name="positionId" value={amounts.amount1} onChange={
+          <input type="number" name="positionId" value={amounts.float1} onChange={
             (e) => handleAmountChange(e, "slot1")} />
         </label>
         <Button onClick={handleClickApprove}>Approve</Button>
