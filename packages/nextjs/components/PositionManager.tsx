@@ -124,7 +124,7 @@ const PositionManager = (props: pMProps) => {
   }
   // CONVERT SLOT0 TICK TO PRICE  FOR tokens
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, slot: "slot0" | "slot1") => {
-
+    //todo handle invalid/empty string
     let input = Number.parseFloat(e.target.value);
     let bigInput = BigInt(input * 10 ** token0Decimals);
     let amount0Min = BigInt(0);
@@ -216,6 +216,40 @@ const PositionManager = (props: pMProps) => {
       addWrite()
     else writeLiquidity()
   };
+
+  /*  {
+              inputs: [
+                { internalType: "uint256", name: "positionId", type: "uint256" },
+                { internalType: "uint128", name: "removedLiquidity", type: "uint128" },
+                { internalType: "bytes", name: "burnData", type: "bytes" },
+              ],
+              name: "withdrawLiquidity",
+              outputs: [],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+            {
+              inputs: [{ internalType: "uint256", name: "positionId", type: "uint256" }],
+              name: "withdrawReward",
+              outputs: [],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+            { stateMutability: "payable", type: "receive" },
+*/
+
+  //TODO: Figure out the ammount i need to send to withdraw
+  const { data: wData, write: wWrite } = useScaffoldContractWrite({
+    contractName: "FarmMainRegularMinStake",
+    functionName: "withdrawLiquidity",
+    args: [{ positionId: positionId, removedLiquidity: amounts.amount0, burnData: "0x" }],
+    value: `${0}`,
+  }
+  )
+
+
+
+
 
 
   function handleRemoveLiquidity() { };

@@ -150,7 +150,7 @@ const contracts = {
         // Farming interface
         FarmMainRegularMinStake: {
           address: "0x129a261afAAe9Fc9AB9D5107e840560d052Cd97E",
-          abi: [
+          abi: abi: [
             {
               anonymous: false,
               inputs: [{ indexed: true, internalType: "address", name: "rewardTokenAddress", type: "address" }],
@@ -498,3 +498,4 @@ const contracts = {
 } as const;
 
 export default contracts;
+
