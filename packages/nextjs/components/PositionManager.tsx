@@ -61,7 +61,7 @@ const PositionManager = (props: pMProps) => {
 
   const { startingBlock, lpTokenAddress, mainToken, involvingETH, pid } = props;
 
-  const { data: tranferData, error } = useScaffoldEventHistory({
+  const { data: transferData, error } = useScaffoldEventHistory({
     contractName: "FarmMainRegularMinStake",
     eventName: "Transfer",
     fromBlock: BigInt(startingBlock),
@@ -69,9 +69,23 @@ const PositionManager = (props: pMProps) => {
   });
   // TODO: map different position id from transfer events
 
-  if (tranferData && tranferData.length > 0) {
-    positionId = BigInt(tranferData[0].args.positionId);
-  }
+  useEffect(() => {
+    if (isConnected === true) {
+      const filteredData = transferData?.filter((event) => event.args.from !== address);
+      console.log(filteredData, "IM RACING HAMSTERS");
+      if (transferData && transferData.length > 0) {
+        positionId = BigInt(transferData[0].args.positionId);
+        console.log(positionId, "positionId");
+      }
+      else {
+        positionId = BigInt(0);
+      }
+    }
+    else {
+      positionId = BigInt(0);
+    }
+  }, [transferData, address, isConnected]);
+
   // Position QUERY
   const positionQuery = useScaffoldContractRead({
     contractName: "FarmMainRegularMinStake",
@@ -202,6 +216,19 @@ const PositionManager = (props: pMProps) => {
   };
 
 
+  //TODO: Figure out the ammount i need to send to withdraw
+  const { data: wData, write: wWrite } = useScaffoldContractWrite({
+    contractName: "FarmMainRegularMinStake",
+    functionName: "withdrawLiquidity",
+    args: [{
+      positionId: positionId,
+      removedLiquidity: amounts.amount0,
+      burnData: '0x',
+    }]
+
+  }
+  )
+
   function handleRemoveLiquidity() { };
   function handleCollectFees() { };
   ///CONSOLE LOGGING---------------------------------------------
@@ -210,7 +237,7 @@ const PositionManager = (props: pMProps) => {
   console.log("user balance 👨:", mainTokenBalance, address, lpTokenAddress)
   console.log("mappedResult 🦖: ", mappedResult)
   console.log("position🐝", positionQuery)
-  console.log(tranferData, "🐮transfer data")
+  console.log(transferData, "🐮transfer data")
   console.log("Decimals", token0Decimals)
   ///-------------------------------------------------------------
 
@@ -223,7 +250,7 @@ const PositionManager = (props: pMProps) => {
           <p>Token Balance: {mainTokenBalance}</p>
           <p>ETH Price: {ethPrice}</p>
         </div>
-  
+
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-bold">Manage Position</h2>
           <label className="flex flex-col gap-1">
@@ -242,6 +269,6 @@ const PositionManager = (props: pMProps) => {
       </div>
     </Card>
   );
-  
+
 };
 export default PositionManager;
