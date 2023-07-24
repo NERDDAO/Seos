@@ -4,7 +4,7 @@
 
 :root,
 [data-theme] {
-  background: hsl(var(--b2));
+  background: white;
 }
 
 body {
@@ -29,4 +29,13 @@ p {
 
 .btn.btn-ghost {
   @apply shadow-none;
+}
+
+.outlined-text {
+  color: white;
+  text-shadow:
+    -1px -1px 0 #000,  
+    1px -1px 0 #000,
+    -5px 5px 0 #000,
+    1px 1px 0 #000;
 }
