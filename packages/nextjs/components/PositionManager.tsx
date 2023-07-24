@@ -8,6 +8,20 @@ import { useAccount, useContractRead, useContractWrite, usePublicClient, useBala
 import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { useGlobalState } from "~~/services/store/store";
 import { Button } from "@mui/material";
+import { Card } from "@mui/material";
+//TODO: 0) get LP token information [done]
+//           -- TOken address + user balance <---- 
+//           -- display user balannce
+//           -- functions:
+//           handleAMmountChange{
+//           -- get price of ether
+//           -- determine price of token using pool information 
+//           -- change ammound based on price
+//           }
+//            handleApprove{
+//            check approval status
+//            run approvals for missing tokens
+//            }
 
 type pMProps = {
   startingBlock: number;
@@ -37,7 +51,7 @@ type addLiquidityArgs = {
 }
 
 const PositionManager = (props: pMProps) => {
-  const [amounts, setAmounts] = useState({ float0: 0, float1: 0, amount0: 0n, amount1: 0n, amount0Min: 0n, amount1Min: 0n });
+  const [amounts, setAmounts] = useState({ amount0: 0, amount1: 0 });
   const publicClient = usePublicClient()
   const { address, isConnected } = useAccount();
   // get position ID from transfer events
@@ -47,22 +61,17 @@ const PositionManager = (props: pMProps) => {
 
   const { startingBlock, lpTokenAddress, mainToken, involvingETH, pid } = props;
 
-  const { data: transferData, error } = useScaffoldEventHistory({
+  const { data: tranferData, error } = useScaffoldEventHistory({
     contractName: "FarmMainRegularMinStake",
     eventName: "Transfer",
     fromBlock: BigInt(startingBlock),
     filters: { from: address },
   });
   // TODO: map different position id from transfer events
-  useEffect(() => {
-    const filteredData = transferData?.filter((event) => event.args.from !== address);
-    console.log(filteredData, "IM RACING HAMSTERS");
-    positionId = BigInt(0);
-    if (transferData && transferData.length > 0) {
-      positionId = BigInt(transferData[0].args.positionId);
-      console.log(positionId, "positionId");
-    }
-  }, [transferData, address]);
+
+  if (tranferData && tranferData.length > 0) {
+    positionId = BigInt(tranferData[0].args.positionId);
+  }
   // Position QUERY
   const positionQuery = useScaffoldContractRead({
     contractName: "FarmMainRegularMinStake",
@@ -93,7 +102,6 @@ const PositionManager = (props: pMProps) => {
     args: [],
     abi: poolContract.abi,
   });
-
   // Mapping result to the TypeScript interface
   // TODO: Fix types on contract to avoid error here
   const mappedResult: Slot0ReturnType = {
@@ -108,7 +116,7 @@ const PositionManager = (props: pMProps) => {
 
 
   // BALANCE CHECK 
-  let mainTokenBalance: number = 0;
+  let mainTokenBalance: number | null = 0;
   const TokenBalance = useBalance({ address: address, token: mainToken });
   if (TokenBalance) {
     mainTokenBalance = Number(TokenBalance.data?.value)
@@ -116,40 +124,28 @@ const PositionManager = (props: pMProps) => {
 
   // TODO: Hanle pools that do not have ETH
 
-  let userBalance: number = 0;
+  let userBalance: number | null = 0;
   const ethBalance = useAccountBalance(
     userAddress);
-  if (involvingETH === true && ethBalance.balance) {
+  if (involvingETH === true) {
     userBalance = ethBalance.balance;
   }
   // CONVERT SLOT0 TICK TO PRICE  FOR tokens
+
+
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, slot: "slot0" | "slot1") => {
-    //todo handle invalid/empty string
-    let input = Number.parseFloat(e.target.value);
-    let bigInput = BigInt(input * 10 ** token0Decimals);
-    let amount0Min = BigInt(0);
-    let amount1Min = BigInt(0);
-    let calculatedAmount = BigInt(0);
-    const slippage: number = 0.95
-    console.log(input);
-
+    let input = Number(e.target.value)
     const ttp = Number(mappedResult.sqrtPriceX96) ** 2 / 2 ** 192;
-
     if (slot === "slot0") {
 
-      calculatedAmount = BigInt(Math.floor(input * ttp * 10 ** ETHDECIMALS));
-
-      amount0Min = BigInt(Math.floor(input * slippage * 10 ** token0Decimals));
-
-      amount1Min = BigInt(Math.floor(input * ttp * slippage * 10 ** ETHDECIMALS));
-      setAmounts({ float0: input, float1: input * ttp, amount0: bigInput, amount0Min: amount0Min, amount1: calculatedAmount, amount1Min: amount1Min })
+      const calculatedAmount = input * ttp;
+      setAmounts({ amount0: input, amount1: calculatedAmount })
     }
-    else if (slot === "slot1") {
-      bigInput = BigInt(Math.floor(input * 10 ** ETHDECIMALS));
-      calculatedAmount = BigInt(Math.floor(input * 1 / ttp * 10 ** token0Decimals));
-      amount0Min = BigInt(Math.floor(input * ttp * slippage * 10 ** token0Decimals));
-      amount1Min = BigInt(Math.floor(input * 1 / ttp * slippage * 10 ** ETHDECIMALS));
-      setAmounts({ float0: input * 1 / ttp, float1: input, amount0: calculatedAmount, amount1: bigInput, amount0Min: amount0Min, amount1Min: amount1Min })
+    else {
+
+      const calculatedAmount = input / ttp;
+      setAmounts({ amount0: calculatedAmount, amount1: input })
     }
   };
 
@@ -162,7 +158,7 @@ const PositionManager = (props: pMProps) => {
   const { config } = usePrepareContractWrite({
     address: mainToken,
     functionName: "approve",
-    args: [farmContractAddress, amounts.amount0],
+    args: [farmContractAddress, BigInt(Math.floor(amounts.amount0 * (10 ** 18)))],
     abi: erc20ABI,
 
   })
@@ -175,81 +171,35 @@ const PositionManager = (props: pMProps) => {
       console.error("Enter an amount to approve");
     }
   };
+
+  /* TODO:
+  -> AddTo position
+  -> Make sure we're using the farmRegular contract
+  -> Make sure ammount 0 = OS and amount 1 = ETH
+  -> Check that amount <= than balance before sending tx
+  -> Check that approval >= balance before sending tx
+      */
+
   const { data: LiquidityData, isLoading: isLiquidityLoading, isSuccess: isLiquiditySuccess, write: writeLiquidity } = useScaffoldContractWrite(
     {
       contractName: "FarmMainRegularMinStake",
-      functionName: "openPosition",//or whatever the fuck its called
+      functionName: "openPosition", //or whatever the fuck its called
       args: [{
         setupIndex: BigInt(pid),
-        amount0: amounts.amount0,
-        amount1: amounts.amount1,
+        amount0: BigInt(Math.floor(amounts.amount0 * (10 ** 18))),
+        amount1: BigInt(Math.floor(amounts.amount1 * (10 ** 18))),
         positionOwner: address as string,
-        amount0Min: amounts.amount0Min,
-        amount1Min: amounts.amount1Min,
+        amount0Min: BigInt(Math.floor((amounts.amount0 * 0.95) * (10 ** 18))),
+        amount1Min: BigInt(Math.floor((amounts.amount1 * 0.95) * (10 ** 18))),
       }
-      ]
-      ,
-      value: `${Number(amounts.float1.toFixed(18))}`
+      ],
+      value: `${amounts.amount1}`
     })
-  const { data: addData, isLoading: addLoading, isSuccess: isAddSuccess, write: addWrite } = useScaffoldContractWrite(
-    {
-      contractName: "FarmMainRegularMinStake",
-      functionName: "addLiquidity",//or whatever the fuck its called
-      args: [
-        positionId,
-        {
-          setupIndex: BigInt(pid),
-          amount0: amounts.amount0,
-          amount1: amounts.amount1,
 
-          positionOwner: address as string,
-          amount0Min: amounts.amount0Min,
-          amount1Min: amounts.amount1Min,
-        }
-      ]
-      ,
-      value: `${Number(amounts.float1.toFixed(18))}`
-    })
-  // Liquidity add function picker
   const handleClickAddLiquidity = () => {
-    if (positionId !== BigInt(0))
-      addWrite()
-    else writeLiquidity()
+    if (amounts.amount0 > 0)
+      writeLiquidity();
   };
-
-  /*  {
-              inputs: [
-                { internalType: "uint256", name: "positionId", type: "uint256" },
-                { internalType: "uint128", name: "removedLiquidity", type: "uint128" },
-                { internalType: "bytes", name: "burnData", type: "bytes" },
-              ],
-              name: "withdrawLiquidity",
-              outputs: [],
-              stateMutability: "nonpayable",
-              type: "function",
-            },
-            {
-              inputs: [{ internalType: "uint256", name: "positionId", type: "uint256" }],
-              name: "withdrawReward",
-              outputs: [],
-              stateMutability: "nonpayable",
-              type: "function",
-            },
-            { stateMutability: "payable", type: "receive" },
-*/
-
-  //TODO: Figure out the ammount i need to send to withdraw
-  const { data: wData, write: wWrite } = useScaffoldContractWrite({
-    contractName: "FarmMainRegularMinStake",
-    functionName: "withdrawLiquidity",
-    args: [{ positionId: positionId, removedLiquidity: amounts.amount0, burnData: "0x" }],
-    value: `${0}`,
-  }
-  )
-
-
-
-
 
 
   function handleRemoveLiquidity() { };
@@ -260,31 +210,38 @@ const PositionManager = (props: pMProps) => {
   console.log("user balance 👨:", mainTokenBalance, address, lpTokenAddress)
   console.log("mappedResult 🦖: ", mappedResult)
   console.log("position🐝", positionQuery)
-  console.log(transferData, "🐮transfer data")
+  console.log(tranferData, "🐮transfer data")
   console.log("Decimals", token0Decimals)
   ///-------------------------------------------------------------
 
   return (
-    <div>
-      <h1>Position Manager{isConnected && address ? ` for ${address}` : ""}</h1>
-      ETH PRICE{ethPrice}
-      <form>
-        <label>
-          Ammount 1:
-          <input type="number" name="positionId" value={amounts.float0} onChange={
-            (e) => handleAmountChange(e, "slot0")
-          } />
-        </label>
-        <br />
-        <label>
-          Ammount 2:
-          <input type="number" name="positionId" value={amounts.float1} onChange={
-            (e) => handleAmountChange(e, "slot1")} />
-        </label>
-        <Button onClick={handleClickApprove}>Approve</Button>
-        <Button onClick={handleClickAddLiquidity}>Add Liquidity</Button>
-      </form>
-    </div>
+    <Card className="p-5 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold">
+      <h1 className="text-3xl font-bold text-center">Position Manager{isConnected && address ? ` for ${address}` : ""}</h1>
+      <div className="grid grid-cols-2 gap-4 p-5 bg-white rounded-xl shadow-md">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xl font-bold">Balances</h2>
+          <p>Token Balance: {mainTokenBalance}</p>
+          <p>ETH Price: {ethPrice}</p>
+        </div>
+  
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xl font-bold">Manage Position</h2>
+          <label className="flex flex-col gap-1">
+            <span>Ammount 1:</span>
+            <input type="text" name="positionId" value={amounts.amount0} onChange={(e) => handleAmountChange(e, "slot0")} className="p-2 rounded border border-gray-200" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span>Ammount 2:</span>
+            <input type="text" name="positionId" value={amounts.amount1} onChange={(e) => handleAmountChange(e, "slot1")} className="p-2 rounded border border-gray-200" />
+          </label>
+          <div className="flex gap-4 mt-4">
+            <Button className="bg-blue-600 text-white py-2 px-4 rounded shadow" onClick={handleClickApprove}>Approve</Button>
+            <Button className="bg-blue-600 text-white py-2 px-4 rounded shadow" onClick={handleClickAddLiquidity}>Add Liquidity</Button>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
+  
 };
 export default PositionManager;

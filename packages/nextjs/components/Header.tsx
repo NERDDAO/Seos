@@ -42,20 +42,20 @@ export const Header = () => {
       <li>
         <NavLink href="/debug">
           <BugAntIcon className="h-4 w-4" />
-          Debug Contracts
+          About
         </NavLink>
       </li>
       <li>
-        <NavLink href="/example-ui">
+        <NavLink href="https://ethereansos.eth.link/">
           <SparklesIcon className="h-4 w-4" />
-          Example UI
+          Deploy Pool
         </NavLink>
       </li>
       <li>
-        <NavLink href="/blockexplorer">
+        {/* <NavLink href="/blockexplorer">
           <MagnifyingGlassIcon className="h-4 w-4" />
           Block Explorer
-        </NavLink>
+        </NavLink> */}
       </li>
     </>
   );
@@ -86,12 +86,12 @@ export const Header = () => {
           )}
         </div>
         <Link href="/" passHref className="hidden lg:flex items-center gap-2 ml-4 mr-6">
-          <div className="flex relative w-10 h-10">
+          {/* <div className="flex relative w-10 h-10">
             <Image alt="SE2 logo" className="cursor-pointer" fill src="/logo.svg" />
-          </div>
+          </div> */}
           <div className="flex flex-col">
-            <span className="font-bold leading-tight">Scaffold-eth</span>
-            <span className="text-xs">Ethereum dev stack</span>
+            {/* <span className="font-bold leading-tight">Scaffold-eth</span>
+            <span className="text-xs">Ethereum dev stack</span> */}
           </div>
         </Link>
         <ul className="hidden lg:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">{navLinks}</ul>

@@ -83,36 +83,32 @@ const SetupCard = (props: SetupType) => {
 
   return (
     <React.Fragment>
-      <Card className="flex flex-col text-left overflow-scroll p-5 m-5 w-196 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded overflow-X-scroll">
-        Setup #{props.pid}
-        Rewards Per Block:{" "}
+      <div className="grid grid-cols-3 gap-4 p-5 m-5">
         {isFetching && !data
           ? "Loading..."
           : error
             ? error.message
             : data && (
-              <TableBody>
-                {Object.entries(variableNames).map(([key, value]) => (
-                  <TableRow key={key}>
-                    {value}
-                    <TableCell>{namedData[key as keyof namedDataType]}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            )}
-      </Card>
-      <Card className="flex flex-col text-left overflow-scroll p-5 m-5 w-196 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold py-2 px-6 rounded overflow-X-scroll">
-        <PositionManager
-          startingBlock={startingBlock}
-          lpTokenAddress={namedData["lpTokenAddress"]}
-          involvingETH={namedData.involvingEth}
-          mainToken={namedData.MainToken}
-          pid={props.pid}
-
-        />
-      </Card>
+              Object.entries(namedData).map(([key, value], i) => (
+                <Card key={i} className="flex items-center justify-center p-4 rounded-xl shadow-md bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold">
+                  <div className="text-center">
+                    <div className="font-semibold text-lg">{variableNames[key as keyof namedDataType]}</div>
+                    <div className="text-sm">{value}</div>
+                  </div>
+                </Card>
+              ))
+            )
+        }
+      </div>
+      
+      <PositionManager
+        startingBlock={startingBlock}
+        lpTokenAddress={namedData["lpTokenAddress"]}
+        involvingETH={namedData.involvingEth}
+        mainToken={namedData.MainToken}
+        pid={props.pid}
+      />
     </React.Fragment>
-
   );
 };
 
