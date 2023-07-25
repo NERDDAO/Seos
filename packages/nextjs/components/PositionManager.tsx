@@ -255,11 +255,11 @@ const PositionManager = (props: pMProps) => {
           <h2 className="text-xl font-bold">Manage Position</h2>
           <label className="flex flex-col gap-1">
             <span>Amount 1:</span>
-            <input type="text" name="positionId" value={amounts.amount0} onChange={(e) => handleAmountChange(e, "slot0")} className="p-2 rounded border border-gray-200" />
+            <input type="number" name="positionId" value={amounts.amount0} onChange={(e) => handleAmountChange(e, "slot0")} className="p-2 rounded border border-gray-200" />
           </label>
           <label className="flex flex-col gap-1">
             <span>Amount 2:</span>
-            <input type="text" name="positionId" value={amounts.amount1} onChange={(e) => handleAmountChange(e, "slot1")} className="p-2 rounded border border-gray-200" />
+            <input type="number" name="positionId" value={amounts.amount1} onChange={(e) => handleAmountChange(e, "slot1")} className="p-2 rounded border border-gray-200" />
           </label>
           <div className="flex gap-4 mt-4">
             <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleClickApprove}>Approve</Button>
