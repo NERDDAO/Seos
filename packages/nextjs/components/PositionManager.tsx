@@ -133,7 +133,7 @@ const PositionManager = (props: pMProps) => {
   let mainTokenBalance: number | null = 0;
   const TokenBalance = useBalance({ address: address, token: mainToken });
   if (TokenBalance) {
-    mainTokenBalance = Number(TokenBalance.data?.value)
+    mainTokenBalance = Number(TokenBalance.data?.value) / 10 ** token0Decimals;
   }
 
   // TODO: Hanle pools that do not have ETH
