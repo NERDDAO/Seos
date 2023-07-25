@@ -264,6 +264,8 @@ const PositionManager = (props: pMProps) => {
           <div className="flex gap-4 mt-4">
             <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleClickApprove}>Approve</Button>
             <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleClickAddLiquidity}>Add Liquidity</Button>
+            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleRemoveLiquidity}>Remove Liquidity</Button>
+            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleCollectFees}>Collect Fees</Button>
           </div>
         </div>
       </div>
