@@ -261,15 +261,18 @@ const PositionManager = (props: pMProps) => {
             <span>Amount 2:</span>
             <input type="number" name="positionId" value={amounts.amount1} onChange={(e) => handleAmountChange(e, "slot1")} className="p-2 rounded border border-gray-200" />
           </label>
-          <div className="flex gap-2 mt-4">
-            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold px-12 rounded-full w-18" onClick={handleClickApprove}>Approve</Button>
-            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold px-12 rounded-full w-18" onClick={handleClickAddLiquidity}>Add Liquidity</Button>
-            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleRemoveLiquidity}>Remove Liquidity</Button>
-            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleCollectFees}>Collect Fees</Button>
-          </div>
+          
         </div>
+        
       </div>
+      <div className="flex gap-2 mt-4">
+            <Button className="flex items-center justify-center bg-gradient-to-r from-gray-200 to-black-200 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleClickApprove}>Approve</Button>
+            <Button className="flex items-center justify-center bg-gradient-to-r from-gray-300 to-black-300 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleClickAddLiquidity}>Add Liquidity</Button>
+            <Button className="flex items-center justify-center bg-gradient-to-r from-gray-400 to-black-400 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleRemoveLiquidity}>Remove Liquidity</Button>
+            <Button className="flex items-center justify-center bg-gradient-to-r from-gray-500 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleCollectFees}>Collect Fees</Button>
+          </div>
     </Card>
+    
   );
 
 };

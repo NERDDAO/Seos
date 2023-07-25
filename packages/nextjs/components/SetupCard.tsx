@@ -4,6 +4,7 @@ import { Card, TableCell, TableRow } from "@mui/material";
 import { useScaffoldContractRead } from "~~/hooks/scaffold-eth/useScaffoldContractRead";
 import { useGlobalState } from "~~/services/store/store";
 import PositionManager from "~~/components/PositionManager";
+import { useState } from "react"
 
 type SetupType = {
   pid: number;
@@ -21,6 +22,7 @@ type namedDataType = {
 };
 
 const SetupCard = (props: SetupType) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const epochToDateAndTime = (epochTime: number) => {
     const dateObj = new Date(epochTime * 100000);
     const date = dateObj.toLocaleDateString();
@@ -89,16 +91,25 @@ const SetupCard = (props: SetupType) => {
           : error
             ? error.message
             : data && (
-              Object.entries(namedData).map(([key, value], i) => (
-                <Card key={i} className="flex items-center max-w-md justify-center p-4 rounded-xl shadow-md bg-gradient-to-r from-white-400 to-grey-100 hover:from-yellow-500 hover:to-red-500 text-black font-bold">
-                  <div className="text-center">
-                    <div className="font-semibold text-lg">{variableNames[key as keyof namedDataType]}</div>
-                    <div className="text-sm">{value}</div>
-                  </div>
-                </Card>
-              ))
+              Object.entries(namedData)
+                .filter(([key]) => isExpanded || ["totalSupply", "lpTokenAddress", "MainToken"].includes(key))
+                .map(([key, value], i) => (
+                  <Card key={i} className="flex items-center max-w-md justify-center p-4 rounded-xl shadow-md bg-gradient-to-r from-white-400 to-grey-100 hover:from-yellow-500 hover:to-red-500 text-black font-bold">
+                    <div className="text-center">
+                      <div className="font-semibold text-lg">{variableNames[key as keyof namedDataType]}</div>
+                      <div className="text-sm">{value}</div>
+                    </div>
+                  </Card>
+                ))
             )
         }
+       <button 
+  onClick={() => setIsExpanded(!isExpanded)} 
+  className="p-2 rounded bg-blue-500 text-white"
+>
+  {isExpanded ? "Show less" : "Show more"}
+</button>
+
       </div>
       
       <PositionManager
