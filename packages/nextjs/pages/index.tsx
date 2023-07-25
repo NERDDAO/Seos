@@ -38,7 +38,7 @@ return (
           (item: any) =>
             item.active === true && (
               <Card
-                className="flex flex-col items-center justify-center p-5 space-y-4 h-96 rounded-xl shadow-xl bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold"
+                className="flex flex-col items-center justify-center border-4 border-black border-dotted p-5 space-y-4 h-96 rounded-x2 shadow-xl hover:from-purple-500 hover:to-white-500 text-black font-bold"
                 key={item.id}
               >
                 <h2 className="text-2xl font-bold">Setup #{item.infoIndex}</h2>
@@ -46,7 +46,7 @@ return (
                 <p>{item.active === true && "ACTIVE"}</p>
                 <Button
                   className={
-                    "bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-white font-bold py-2 px-6 rounded"
+                    "bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded"
                   }
                   onClick={() => {
                     handleClick(item.infoIndex.toString(), item.startBlock.toString());

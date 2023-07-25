@@ -83,14 +83,14 @@ const SetupCard = (props: SetupType) => {
 
   return (
     <React.Fragment>
-      <div className="grid grid-cols-3 gap-4 p-5 m-5">
+      <div className="grid grid-cols-3 gap-4 p-5 m-5 border-4 border-black border-dotted">
         {isFetching && !data
           ? "Loading..."
           : error
             ? error.message
             : data && (
               Object.entries(namedData).map(([key, value], i) => (
-                <Card key={i} className="flex items-center justify-center p-4 rounded-xl shadow-md bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-black font-bold">
+                <Card key={i} className="flex items-center border-4 border-black border-dotted justify-center p-4 rounded-xl shadow-md bg-gradient-to-r from-white-400 to-grey-100 hover:from-yellow-500 hover:to-red-500 text-black font-bold">
                   <div className="text-center">
                     <div className="font-semibold text-lg">{variableNames[key as keyof namedDataType]}</div>
                     <div className="text-sm">{value}</div>
