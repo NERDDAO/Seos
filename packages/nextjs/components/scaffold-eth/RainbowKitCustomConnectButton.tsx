@@ -39,7 +39,7 @@ export const RainbowKitCustomConnectButton = () => {
                       <span>Wrong network</span>
                       <ChevronDownIcon className="h-6 w-4 ml-2 sm:ml-0" />
                     </label>
-                    <ul tabIndex={0} className="dropdown-content menu p-2 mt-1 shadow-lg bg-white rounded-box">
+                    <ul tabIndex={0} className="dropdown-content menu p-2 mt-1 shadow-lg bg-white text-black rounded-box">
                       <li>
                         <button
                           className="menu-item"

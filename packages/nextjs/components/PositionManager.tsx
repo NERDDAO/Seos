@@ -242,9 +242,9 @@ const PositionManager = (props: pMProps) => {
   ///-------------------------------------------------------------
 
   return (
-    <Card className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded">
-      <h1 className="text-3xl font-bold text-center pb-5">Position Manager{isConnected && address ? ` for ${address}` : ""}</h1>
-      <div className="grid grid-cols-2 gap-4 p-5 bg-white rounded-xl">
+    <Card className="bg-gradient-to-r max-w-md mx-auto text-center from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-4 px-8 rounded">
+      <h1 className="text-3xl font-bold text-center pb-5">Position{isConnected && address ? ` for ${address}` : ""}</h1>
+      <div className="grid grid-cols-2 gap-4 max-w-md p-5 rounded-xl">
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-bold">Balances</h2>
           <p>Token Balance: {mainTokenBalance}</p>
@@ -261,9 +261,9 @@ const PositionManager = (props: pMProps) => {
             <span>Amount 2:</span>
             <input type="number" name="positionId" value={amounts.amount1} onChange={(e) => handleAmountChange(e, "slot1")} className="p-2 rounded border border-gray-200" />
           </label>
-          <div className="flex gap-4 mt-4">
-            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleClickApprove}>Approve</Button>
-            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold py-2 px-6 rounded" onClick={handleClickAddLiquidity}>Add Liquidity</Button>
+          <div className="flex gap-2 mt-4">
+            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold px-12 rounded-full w-18" onClick={handleClickApprove}>Approve</Button>
+            <Button className="bg-gradient-to-r from-gray-400 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold px-12 rounded-full w-18" onClick={handleClickAddLiquidity}>Add Liquidity</Button>
           </div>
         </div>
       </div>

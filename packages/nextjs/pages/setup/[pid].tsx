@@ -13,7 +13,7 @@ export default function SetupPage() {
         <div className="text-2xl font-bold text-center align-middle mb-4">
           Setup #{pid?.toString()}
         </div>
-        <div className="text-2xl font-bold text-center align-middle mb-4">
+        <div className="text-2xl max-w-xxl font-bold text-center align-middle mb-4">
           Setup Info
           {/* 
             DEV NOTES
