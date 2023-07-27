@@ -9,6 +9,7 @@ import { useAccountBalance, useScaffoldContractRead, useScaffoldEventHistory, us
 import { useGlobalState } from "~~/services/store/store";
 import { Button } from "@mui/material";
 import { Card } from "@mui/material";
+import { Battery100Icon } from "@heroicons/react/24/outline";
 //TODO: 0) get LP token information [done]
 //           -- TOken address + user balance <---- 
 //           -- display user balannce
@@ -117,7 +118,6 @@ const PositionManager = (props: pMProps) => {
     abi: poolContract.abi,
   });
   // Mapping result to the TypeScript interface
-  // TODO: Fix types on contract to avoid error here
   const mappedResult: Slot0ReturnType = {
     sqrtPriceX96: sl0tResult.data ? sl0tResult.data[0] as number : 0,
     tick: sl0tResult.data ? sl0tResult.data[1] as number : 0,
@@ -210,11 +210,36 @@ const PositionManager = (props: pMProps) => {
       value: `${amounts.amount1}`
     })
 
+  const { data: addLiquidityData, isLoading: isAddLiquidityLoading, isSuccess: isAddLiquiditySuccess, write: addLiquidity } = useScaffoldContractWrite(
+    {
+      contractName: "FarmMainRegularMinStake",
+      functionName: "addLiquidity", //or whatever the fuck its called
+      args: [positionId,
+        {
+          setupIndex: BigInt(pid),
+          amount0: BigInt(Math.floor(amounts.amount0 * (10 ** 18))),
+          amount1: BigInt(Math.floor(amounts.amount1 * (10 ** 18))),
+          positionOwner: address as string,
+          amount0Min: BigInt(Math.floor((amounts.amount0 * 0.95) * (10 ** 18))),
+          amount1Min: BigInt(Math.floor((amounts.amount1 * 0.95) * (10 ** 18))),
+        }
+      ],
+      value: `${amounts.amount1}`
+    })
+
   const handleClickAddLiquidity = () => {
-    if (amounts.amount0 > 0)
+    if (amounts.amount0 == 0) return console.log("nope")
+    else if (positionId == 0n) {
       writeLiquidity();
+    }
+    else {
+      addLiquidity();
+    }
   };
 
+  let testNumber = 0.03
+  let perecentage = 100
+  let calculatedAmount = (testNumber * perecentage) / 100;
 
   //TODO: Figure out the ammount i need to send to withdraw
   const { data: wData, write: wWrite } = useScaffoldContractWrite({
@@ -222,15 +247,30 @@ const PositionManager = (props: pMProps) => {
     functionName: "withdrawLiquidity",
     args: [{
       positionId: positionId,
-      removedLiquidity: amounts.amount0,
+      removedLiquidity: calculatedAmount,
       burnData: '0x',
     }]
-
   }
   )
 
-  function handleRemoveLiquidity() { };
-  function handleCollectFees() { };
+  function handleRemoveLiquidity() {
+    if (positionId == 0n) return console.log("nope")
+    wWrite();
+  };
+
+  const { data: cData, write: cWrite } = useScaffoldContractWrite({
+    contractName: "FarmMainRegularMinStake",
+    functionName: "withdrawReward",
+    args: [
+      positionId,
+    ]
+  }
+  )
+
+  function handleCollectFees() {
+    if (positionId == 0n) return console.log("nope")
+    cWrite();
+  };
   ///CONSOLE LOGGING---------------------------------------------
   console.log("eth balance 🐷:", ethBalance)
   console.log("slot0 🐸:", sl0tResult)
@@ -261,18 +301,18 @@ const PositionManager = (props: pMProps) => {
             <span>Amount 2:</span>
             <input type="number" name="positionId" value={amounts.amount1} onChange={(e) => handleAmountChange(e, "slot1")} className="p-2 rounded border border-gray-200" />
           </label>
-          
+
         </div>
-        
+
       </div>
       <div className="flex gap-2 mt-4">
-            <Button className="flex items-center justify-center bg-gradient-to-r from-gray-200 to-black-200 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleClickApprove}>Approve</Button>
-            <Button className="flex items-center justify-center bg-gradient-to-r from-gray-300 to-black-300 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleClickAddLiquidity}>Add Liquidity</Button>
-            <Button className="flex items-center justify-center bg-gradient-to-r from-gray-400 to-black-400 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleRemoveLiquidity}>Remove Liquidity</Button>
-            <Button className="flex items-center justify-center bg-gradient-to-r from-gray-500 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleCollectFees}>Collect Fees</Button>
-          </div>
+        <Button className="flex items-center justify-center bg-gradient-to-r from-gray-200 to-black-200 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleClickApprove}>Approve</Button>
+        <Button className="flex items-center justify-center bg-gradient-to-r from-gray-300 to-black-300 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleClickAddLiquidity}>Add Liquidity</Button>
+        <Button className="flex items-center justify-center bg-gradient-to-r from-gray-400 to-black-400 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleRemoveLiquidity}>Remove Liquidity</Button>
+        <Button className="flex items-center justify-center bg-gradient-to-r from-gray-500 to-black-500 hover:from-gray-100 hover:to-black-100 text-black font-bold px-10 rounded-full w-18" onClick={handleCollectFees}>Collect Fees</Button>
+      </div>
     </Card>
-    
+
   );
 
 };
